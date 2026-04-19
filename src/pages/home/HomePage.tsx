@@ -103,7 +103,7 @@ export function HomePage() {
     <section className="page">
       <header className="page-header">
         <p className="eyebrow">今日</p>
-        <h1>复习看板</h1>
+        <h1>看板</h1>
       </header>
 
       <div className="grid-two">

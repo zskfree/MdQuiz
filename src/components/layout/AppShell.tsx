@@ -2,7 +2,7 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 
 const navItems = [
-  { to: '/', label: '复习看板', end: true },
+  { to: '/', label: '看板', end: true },
   { to: '/libraries', label: '题库' },
   { to: '/practice', label: '练习' },
   { to: '/exam', label: '考试' },
@@ -10,7 +10,7 @@ const navItems = [
 ]
 
 function getCollapsedLabel(label: string): string {
-  if (label === '复习看板') {
+  if (label === '看板') {
     return '看板'
   }
 
