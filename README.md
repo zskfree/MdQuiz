@@ -1,19 +1,18 @@
 # MdQuiz
 
-
 项目使用 React + TypeScript + Vite 构建，数据持久化到浏览器 IndexedDB，可离线使用。当前默认内置题库来源于 `source-materials/` 目录中的 Markdown 文件，构建时会自动扫描并生成默认题库。
 
 ## 当前版本能力
 
-  - 默认题库：构建时自动扫描 `source-materials/*.md`
-  - 导入题库：支持上传 `.md` 题库文件
-  - 切换当前题库
-  - 下载题库：导出为可再次导入的 Markdown 文件
-  - 删除题库：支持删除导入题库，默认题库不可删除
-  - 顺序练题
-  - 快速练题
-  - 今日复习
-  - 标记回看
+- 默认题库：构建时自动扫描 `source-materials/*.md`
+- 导入题库：支持上传 `.md` 题库文件
+- 切换当前题库
+- 下载题库：导出为可再次导入的 Markdown 文件
+- 删除题库：支持删除导入题库，默认题库不可删除
+- 顺序练题
+- 快速练题
+- 今日复习
+- 标记回看
 - 学习数据管理
   - 支持清除当前题库做题记录
   - 支持整站备份导出 / 导入
@@ -75,6 +74,7 @@ npm ci
 ```bash
 npm run dev
 ```
+
 - 开发环境读取的是最新生成的默认题库数据
 
 ## Google 登录与云同步
@@ -115,7 +115,6 @@ VITE_FIREBASE_APP_ID=...
 
 工作流 [deploy.yml](.github/workflows/deploy.yml) 已读取这些变量并注入构建环境。
 
-
 - `VITE_*` 变量会在前端打包后出现在浏览器端，不属于后端机密。
 - 真正的安全边界依赖 Firebase Firestore 规则（必须按用户 UID 做读写隔离）。
 
@@ -148,6 +147,7 @@ npm run build
 本地预览生产构建：
 
 npm run preview
+
 ```
 
 说明：
@@ -165,12 +165,12 @@ npm run test
 
 默认题库不再手工维护单独的 JSON 清单，而是由 `source-materials/` 自动生成。
 
-2. 题库名称默认取 Markdown 文件名（不带扩展名）
-3. 构建时扫描所有 `.md` 文件，生成：
+1. 题库名称默认取 Markdown 文件名（不带扩展名）
+2. 构建时扫描所有 `.md` 文件，生成：
    - `public/builtin-library/libraries.json`
    - `public/builtin-library/questions.json`
    - `public/builtin-library/diagnostics.json`
-4. 应用启动后会把这些默认题库加载到本地存储
+3. 应用启动后会把这些默认题库加载到本地存储
 
 当前默认题库文件：
 
@@ -246,7 +246,6 @@ D. 选项四
 - 错题与复习数据
 - 当前练题 / 考试会话
 - 考试结果
-
 
 ## 页面说明
 
