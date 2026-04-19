@@ -258,7 +258,7 @@ export function SettingsPage() {
             : '正在初始化云端同步模块...'}
         </p>
 
-        <div className="action-row">
+        <div className="action-row cloud-sync-actions">
           {cloudUser ? (
             <button type="button" className="action-button" onClick={() => void handleGoogleSignOut()}>
               退出 Google
@@ -329,7 +329,7 @@ export function SettingsPage() {
           导出内容包括题库、题目、诊断、学习记录、当前会话与考试结果。导入采用合并恢复策略。
         </p>
 
-        <div className="action-row">
+        <div className="action-row backup-actions">
           <button type="button" className="action-button" onClick={handleExport}>
             导出备份文件
           </button>

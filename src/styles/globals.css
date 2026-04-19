@@ -69,6 +69,10 @@ select {
   padding: 20px 12px;
 }
 
+.app-sidebar.collapsed .sidebar-head {
+  justify-content: center;
+}
+
 .sidebar-head {
   display: flex;
   align-items: flex-start;
@@ -84,6 +88,7 @@ select {
 }
 
 .app-sidebar.collapsed .brand {
+  width: 100%;
   margin-bottom: 20px;
   justify-content: center;
 }
@@ -531,6 +536,10 @@ select {
   flex-wrap: wrap;
 }
 
+.cloud-sync-actions {
+  align-items: flex-start;
+}
+
 .compact-row {
   align-items: center;
 }
@@ -814,6 +823,30 @@ select {
     flex-direction: column;
   }
 
+  .cloud-sync-actions,
+  .backup-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    align-items: stretch;
+  }
+
+  .cloud-sync-actions .action-button,
+  .cloud-sync-actions .secondary-button,
+  .backup-actions .action-button,
+  .backup-actions .secondary-button,
+  .backup-actions .file-button {
+    width: 100%;
+    min-height: 44px;
+    justify-content: center;
+  }
+
+  .cloud-sync-actions .inline-field,
+  .backup-actions .secondary-button:last-child {
+    grid-column: 1 / -1;
+    min-width: 0;
+  }
+
   .practice-topbar,
   .practice-progress,
   .quick-mode-progress {
@@ -1087,6 +1120,11 @@ select {
 
   .mobile-topbar-title {
     font-size: 0.96rem;
+  }
+
+  .cloud-sync-actions,
+  .backup-actions {
+    grid-template-columns: 1fr;
   }
 
   .metric-label {
