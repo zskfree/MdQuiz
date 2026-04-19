@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+﻿import { useEffect, useMemo, useState } from 'react'
 import { MarkdownRenderer } from '../../core/renderer'
 import { useLibraryStore, useReviewStore, useSessionStore } from '../../stores'
 
@@ -298,7 +298,7 @@ export function PracticePage() {
     return (
       <section className="page">
         <header className="page-header">
-          <p className="eyebrow">练习会话</p>
+          <p className="eyebrow">练题会话</p>
           <h1>练习</h1>
         </header>
 
@@ -312,7 +312,7 @@ export function PracticePage() {
               onClick={() => void handleStartSequential()}
               disabled={!activeLibraryId || questions.length === 0}
             >
-              顺序刷题
+              顺序练题
             </button>
             <button
               className="secondary-button"
@@ -338,7 +338,7 @@ export function PracticePage() {
     <section className={quickMode ? 'page practice-page quick-mode' : 'page practice-page'}>
       {!quickMode ? (
         <header className="page-header">
-          <p className="eyebrow">练习会话</p>
+          <p className="eyebrow">练题会话</p>
           <h1>练习</h1>
         </header>
       ) : null}
@@ -350,25 +350,20 @@ export function PracticePage() {
               <span>
                 第 {currentSession.currentIndex + 1} / {currentSession.questionIds.length} 题
               </span>
-              {!quickMode && memoryRecord ? <span className="muted">记忆等级：第 {memoryRecord.level} 级</span> : null}
+              {!quickMode && memoryRecord ? (
+                <span className="muted">记忆等级：第 {memoryRecord.level} 级</span>
+              ) : null}
             </div>
 
             {quickMode ? (
               <div className="quick-mode-tools">
-                <button
-                  type="button"
-                  className="secondary-button quick-mode-mark-toggle"
-                  onClick={() => toggleMarkedQuestion(currentQuestion.id)}
-                >
-                  {currentSession.marks[currentQuestion.id] ? '取消标记' : '标记回看'}
-                </button>
                 <button type="button" className="secondary-button quick-mode-toggle" onClick={toggleQuickMode}>
-                  退出快速刷题
+                  退出快速练题
                 </button>
               </div>
             ) : (
               <button type="button" className="secondary-button quick-mode-toggle" onClick={toggleQuickMode}>
-                开启快速刷题
+                进入快速练题
               </button>
             )}
           </div>
@@ -421,6 +416,12 @@ export function PracticePage() {
                 disabled={resolvedAnswer.selected.length === 0}
               >
                 下一题
+              </button>
+              <button
+                className="secondary-button"
+                onClick={() => toggleMarkedQuestion(currentQuestion.id)}
+              >
+                {currentSession.marks[currentQuestion.id] ? '取消标记' : '标记回看'}
               </button>
             </div>
           ) : (
@@ -508,7 +509,7 @@ export function PracticePage() {
                 </div>
               ) : null}
               <p className="muted">
-                快捷键：可用字母键或数字键选择选项，回车提交或下一题，空格展开解析，左右方向键切题，按标记快捷键可标记回看
+                快捷键：可用字母键或数字键选择选项，回车提交或下一题，空格展开解析，左右方向键切题，按 M 标记回看。
               </p>
             </div>
           ) : null}
@@ -516,7 +517,7 @@ export function PracticePage() {
           {currentSession.status === 'completed' ? (
             <div className="feedback success">
               <p>本轮练习已完成。</p>
-              <p className="muted">可以返回首页开始下一轮，或切换到其他练习模式。</p>
+              <p className="muted">可以返回首页开始下一轮，或切换到其他练题模式。</p>
             </div>
           ) : null}
         </div>
