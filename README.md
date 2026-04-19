@@ -1,31 +1,25 @@
 # MdQuiz
 
-MdQuiz 是一个本地优先的 Markdown 题库练习应用，面向题库导入、顺序练题、快速练题、错题复习、模拟考试和结果回看等场景。
 
 项目使用 React + TypeScript + Vite 构建，数据持久化到浏览器 IndexedDB，可离线使用。当前默认内置题库来源于 `source-materials/` 目录中的 Markdown 文件，构建时会自动扫描并生成默认题库。
 
 ## 当前版本能力
 
-- 多题库管理
   - 默认题库：构建时自动扫描 `source-materials/*.md`
   - 导入题库：支持上传 `.md` 题库文件
   - 切换当前题库
   - 下载题库：导出为可再次导入的 Markdown 文件
   - 删除题库：支持删除导入题库，默认题库不可删除
-- 练题模式
   - 顺序练题
   - 快速练题
   - 今日复习
-  - 错题练习
   - 标记回看
 - 学习数据管理
-  - 题库之间的做题记录、复习记录、考试记录相互隔离
   - 支持清除当前题库做题记录
   - 支持整站备份导出 / 导入
 - 模拟考试
   - 按题库发起考试
   - 支持交卷、成绩统计、结果回看
-- 题库解析
   - 支持单题 Markdown 导入
   - 支持整份 Markdown 题库自动切题导入
   - 自动解析题干、选项、答案、解析
@@ -33,10 +27,6 @@ MdQuiz 是一个本地优先的 Markdown 题库练习应用，面向题库导入
   - 自动生成题库诊断信息
 - 部署与预览
   - 支持 GitHub Pages 自动部署
-  - `npm run preview` 已支持本地正确预览生产构建产物
-
-## 技术栈
-
 - React 18
 - TypeScript
 - Vite 5
@@ -62,17 +52,10 @@ MdQuiz/
       storage/              # IndexedDB 仓储与迁移
     pages/                  # 看板、题库、练习、考试、诊断、设置页面
     stores/                 # Zustand 状态管理
-  source-materials/         # 默认题库 Markdown 源文件
-  public/builtin-library/   # 构建生成的默认题库静态数据
-  scripts/
-    build-library.mjs       # 扫描 source-materials 并生成默认题库
-    build-site.mjs          # GitHub Pages 生产构建
     build-preview.mjs       # 本地 preview 构建
   .github/workflows/
     deploy.yml              # GitHub Pages 自动部署工作流
 ```
-
-## 环境要求
 
 - Node.js 20+
 - npm 9+
@@ -92,10 +75,6 @@ npm ci
 ```bash
 npm run dev
 ```
-
-说明：
-
-- `npm run dev` 会先执行 `npm run build:library`
 - 开发环境读取的是最新生成的默认题库数据
 
 ## Google 登录与云同步
@@ -103,7 +82,7 @@ npm run dev
 当前版本已接入 Firebase，实现了：
 
 - Google 登录
-- 手动上传同步（本地 -> 云端）
+- 手动上传同步（本地 -> 云端，Firestore 分片保存）
 - 手动下载恢复（云端 -> 本地，合并恢复）
 - 自动同步开关（前台在线时定时同步）
 
@@ -113,15 +92,11 @@ npm run dev
 
 ```bash
 cp .env.example .env.local
-```
-
-如需切换到自己的 Firebase 项目，可在 `.env.local` 覆盖：
 
 ```bash
 VITE_FIREBASE_API_KEY=...
 VITE_FIREBASE_AUTH_DOMAIN=...
 VITE_FIREBASE_PROJECT_ID=...
-VITE_FIREBASE_STORAGE_BUCKET=...
 VITE_FIREBASE_MESSAGING_SENDER_ID=...
 VITE_FIREBASE_APP_ID=...
 ```
@@ -135,24 +110,21 @@ VITE_FIREBASE_APP_ID=...
 - `VITE_FIREBASE_API_KEY`
 - `VITE_FIREBASE_AUTH_DOMAIN`
 - `VITE_FIREBASE_PROJECT_ID`
-- `VITE_FIREBASE_STORAGE_BUCKET`
 - `VITE_FIREBASE_MESSAGING_SENDER_ID`
 - `VITE_FIREBASE_APP_ID`
 
 工作流 [deploy.yml](.github/workflows/deploy.yml) 已读取这些变量并注入构建环境。
 
-安全说明：
 
 - `VITE_*` 变量会在前端打包后出现在浏览器端，不属于后端机密。
-- 真正的安全边界依赖 Firebase Firestore/Storage 规则（必须按用户 UID 做读写隔离）。
+- 真正的安全边界依赖 Firebase Firestore 规则（必须按用户 UID 做读写隔离）。
 
 ### Firebase 控制台配置步骤
 
 1. 创建 Firebase 项目
 2. 在 Authentication 中启用 Google 登录
 3. 创建 Firestore Database
-4. 创建 Storage Bucket
-5. 在 Project settings -> Web App 中获取配置
+4. 在 Project settings -> Web App 中获取配置
 
 ### Firestore 规则示例
 
@@ -165,33 +137,9 @@ service cloud.firestore {
     }
   }
 }
-```
-
-### Storage 规则示例
-
-```text
-rules_version = '2';
-service firebase.storage {
-  match /b/{bucket}/o {
-    match /users/{userId}/{allPaths=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-  }
-}
-```
-
-### 使用入口
-
-在设置页可完成：
-
 - Google 登录/退出
 - 上传到云端
 - 从云端恢复
-- 开启/关闭自动同步
-
-## 构建与预览
-
-生产构建：
 
 ```bash
 npm run build
@@ -199,13 +147,11 @@ npm run build
 
 本地预览生产构建：
 
-```bash
 npm run preview
 ```
 
 说明：
 
-- `npm run build` 用于 GitHub Pages 部署产物，构建时会使用仓库对应的生产 `base`
 - `npm run preview` 会先重新生成一份本地预览专用 `dist`，强制使用 `/` 作为 `base`
 - 如果你刚执行过 `npm run preview`，准备发布前请重新执行一次 `npm run build`
 
@@ -219,9 +165,6 @@ npm run test
 
 默认题库不再手工维护单独的 JSON 清单，而是由 `source-materials/` 自动生成。
 
-规则如下：
-
-1. `source-materials/` 下每个 `.md` 文件视为一个默认题库
 2. 题库名称默认取 Markdown 文件名（不带扩展名）
 3. 构建时扫描所有 `.md` 文件，生成：
    - `public/builtin-library/libraries.json`
@@ -231,18 +174,9 @@ npm run test
 
 当前默认题库文件：
 
-- [中级电力交易员笔试题库.md](D:/projects/MdQuiz/source-materials/中级电力交易员笔试题库.md)
-
-如果你要新增默认题库，只需要把新的 `.md` 文件放进 `source-materials/`，然后执行：
-
-```bash
-npm run build
 ```
 
 ## 题库 Markdown 格式
-
-项目支持两类 Markdown 题库输入。
-
 ### 1. 整份题库文件
 
 推荐使用这种格式，一份文件内包含多道题：
@@ -254,20 +188,11 @@ npm run build
 
 以下说法正确的是：
 
-- A. 仅用于实时平衡
-- B. 有助于稳定市场预期
-- C. 只适用于现货市场
-- D. 与合同管理无关
 - 答案：B
 - 解析：中长期交易有助于稳定供需双方预期。
 
 ## 2、电力用户侧响应属于以下哪类机制？
 
-- A. 需求响应
-- B. 输电检修
-- C. 电源扩建
-- D. 财务结算
-- 答案：A
 ```
 
 ### 2. 单题 Markdown 文件
@@ -275,8 +200,6 @@ npm run build
 也支持单题文件，可带 frontmatter：
 
 ```md
----
-id: trader-2025-10-001
 title: 示例题目
 type: single
 answer: A
@@ -305,37 +228,25 @@ D. 选项四
 
 ## 题库页面功能
 
-题库页面当前支持：
-
 - 导入 `.md` 题库文件
 - 查看所有题库及来源类型
 - 切换当前题库
 - 下载题库为 Markdown 文件
 - 删除导入题库
 - 查看当前题库诊断信息
-
-约束：
-
-- 默认题库 `sourceType = builtin` 不允许删除
 - 导入题库 `sourceType = imported` 可以删除
 - 删除题库时会同时删除：
   - 题库元数据
   - 题目数据
   - 诊断信息
-  - 做题记录
-  - 会话记录
-  - 考试结果
 
 ## 做题记录与数据隔离
-
-不同题库的学习数据已按题库隔离保存，包括：
 
 - 记忆记录
 - 错题与复习数据
 - 当前练题 / 考试会话
 - 考试结果
 
-设置页面支持“清除当前题库做题记录”，该操作不会删除题库本身，只会清空当前题库对应的学习数据。
 
 ## 页面说明
 

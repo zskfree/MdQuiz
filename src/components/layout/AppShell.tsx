@@ -19,7 +19,6 @@ function getCollapsedLabel(label: string): string {
 }
 
 export function AppShell() {
-  const [sidebarExpanded, setSidebarExpanded] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const location = useLocation()
@@ -72,15 +71,11 @@ export function AppShell() {
     }
   }
 
-  const shellClassName = isMobile
-    ? 'app-shell mobile'
-    : sidebarExpanded
-      ? 'app-shell'
-      : 'app-shell collapsed'
+  const shellClassName = isMobile ? 'app-shell mobile' : 'app-shell collapsed'
 
   const sidebarClassName = [
     'app-sidebar',
-    !sidebarExpanded && !isMobile ? 'collapsed' : '',
+    !isMobile ? 'collapsed' : '',
     isMobile ? 'mobile' : '',
     isMobile && mobileMenuOpen ? 'mobile-open' : '',
   ]
@@ -102,7 +97,7 @@ export function AppShell() {
         <div className="sidebar-head">
           <div className="brand">
             <span className="brand-mark">刷题</span>
-            {sidebarExpanded || isMobile ? (
+            {isMobile ? (
               <div>
                 <div className="brand-title">题库练习</div>
                 <div className="brand-subtitle">本地刷题应用</div>
@@ -119,16 +114,7 @@ export function AppShell() {
             >
               ×
             </button>
-          ) : (
-            <button
-              type="button"
-              className="sidebar-toggle"
-              aria-label={sidebarExpanded ? '折叠侧栏' : '展开侧栏'}
-              onClick={() => setSidebarExpanded((value) => !value)}
-            >
-              {sidebarExpanded ? '←' : '→'}
-            </button>
-          )}
+          ) : null}
         </div>
 
         <nav className="nav-list" aria-label="主导航">
@@ -141,7 +127,7 @@ export function AppShell() {
               onClick={handleNavClick}
               className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}
             >
-              {sidebarExpanded || isMobile ? item.label : getCollapsedLabel(item.label)}
+              {isMobile ? item.label : getCollapsedLabel(item.label)}
             </NavLink>
           ))}
         </nav>

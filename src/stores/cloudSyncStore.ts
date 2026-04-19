@@ -1,7 +1,6 @@
 import { FirebaseError } from 'firebase/app'
 import { onAuthStateChanged, signInWithPopup, signOut as firebaseSignOut, type User } from 'firebase/auth'
-import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore'
-import { getBytes, ref, uploadString } from 'firebase/storage'
+import { deleteDoc, doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore'
 import { create } from 'zustand'
 import { type BackupPayload, createBackupPayload, parseBackupPayload } from '../core/import-export'
 import {
@@ -41,7 +40,7 @@ type CloudSyncState = {
 const AUTO_SYNC_STORAGE_KEY = 'mdquiz.cloud.autoSyncEnabled'
 const CLOUD_SYNC_META_COLLECTION = 'sync'
 const CLOUD_SYNC_META_DOC_ID = 'meta'
-const CLOUD_BACKUP_FILE_PATH = 'backups/latest.json'
+const FIRESTORE_CHUNK_MAX_BYTES = 450 * 1024
 
 let hasInitializedAuthListener = false
 
@@ -85,14 +84,6 @@ function resolveVisibleError(error: unknown, fallbackMessage: string): string {
             return '登录窗口已被新的请求替换，请重试。'
         }
 
-        if (error.code === 'storage/object-not-found') {
-            return '云端还没有可恢复的备份，请先执行一次上传同步。'
-        }
-
-        if (error.code === 'storage/unauthorized') {
-            return '云端同步权限不足，请确认 Storage 规则是否仅允许当前用户访问。'
-        }
-
         if (error.code === 'permission-denied') {
             return 'Firestore 权限不足，请确认规则是否允许当前用户写入同步元数据。'
         }
@@ -121,8 +112,46 @@ function getCloudMetaRef(uid: string, services: FirebaseServices) {
     return doc(services.db, 'users', uid, CLOUD_SYNC_META_COLLECTION, CLOUD_SYNC_META_DOC_ID)
 }
 
-function getCloudBackupRef(uid: string, services: FirebaseServices) {
-    return ref(services.storage, `users/${uid}/${CLOUD_BACKUP_FILE_PATH}`)
+function buildChunkDocumentId(index: number): string {
+    return `chunk-${index.toString().padStart(6, '0')}`
+}
+
+function bytesToBase64(bytes: Uint8Array): string {
+    let binary = ''
+    const step = 0x8000
+
+    for (let index = 0; index < bytes.length; index += step) {
+        const slice = bytes.subarray(index, index + step)
+        binary += String.fromCharCode(...slice)
+    }
+
+    return btoa(binary)
+}
+
+function base64ToBytes(value: string): Uint8Array {
+    const binary = atob(value)
+    const bytes = new Uint8Array(binary.length)
+
+    for (let index = 0; index < binary.length; index += 1) {
+        bytes[index] = binary.charCodeAt(index)
+    }
+
+    return bytes
+}
+
+function encodePayloadToChunks(content: string): { chunks: string[]; byteLength: number } {
+    const bytes = new TextEncoder().encode(content)
+    const chunks: string[] = []
+
+    for (let offset = 0; offset < bytes.length; offset += FIRESTORE_CHUNK_MAX_BYTES) {
+        const slice = bytes.subarray(offset, offset + FIRESTORE_CHUNK_MAX_BYTES)
+        chunks.push(bytesToBase64(slice))
+    }
+
+    return {
+        chunks,
+        byteLength: bytes.byteLength,
+    }
 }
 
 function createCurrentBackupPayload(): BackupPayload {
@@ -161,22 +190,51 @@ async function restoreFromBackupPayload(payload: BackupPayload): Promise<void> {
 }
 
 async function uploadBackup(uid: string, payload: BackupPayload, services: FirebaseServices): Promise<void> {
-    const backupRef = getCloudBackupRef(uid, services)
-    const jsonContent = JSON.stringify(payload)
+    const metaRef = getCloudMetaRef(uid, services)
+    const previousMetaSnapshot = await getDoc(metaRef)
+    const previousChunkCount = (() => {
+        const value = previousMetaSnapshot.data()?.chunkCount
+        return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? Math.floor(value) : 0
+    })()
 
-    await uploadString(backupRef, jsonContent, 'raw', {
-        contentType: 'application/json; charset=utf-8',
-    })
+    const { chunks, byteLength } = encodePayloadToChunks(JSON.stringify(payload))
+
+    await Promise.all(
+        chunks.map((chunkData, index) =>
+            setDoc(
+                doc(services.db, 'users', uid, CLOUD_SYNC_META_COLLECTION, buildChunkDocumentId(index)),
+                {
+                    index,
+                    data: chunkData,
+                    updatedAt: Date.now(),
+                },
+            ),
+        ),
+    )
+
+    if (previousChunkCount > chunks.length) {
+        const staleChunkIndexes = Array.from(
+            { length: previousChunkCount - chunks.length },
+            (_, offset) => chunks.length + offset,
+        )
+
+        await Promise.all(
+            staleChunkIndexes.map((index) =>
+                deleteDoc(doc(services.db, 'users', uid, CLOUD_SYNC_META_COLLECTION, buildChunkDocumentId(index))),
+            ),
+        )
+    }
 
     await setDoc(
-        getCloudMetaRef(uid, services),
+        metaRef,
         {
             app: 'mdquiz',
             version: payload.version,
             exportedAt: payload.exportedAt,
+            chunkCount: chunks.length,
+            payloadByteLength: byteLength,
             updatedAt: Date.now(),
             serverUpdatedAt: serverTimestamp(),
-            backupPath: backupRef.fullPath,
         },
         { merge: true },
     )
@@ -186,15 +244,45 @@ async function downloadBackup(
     uid: string,
     services: FirebaseServices,
 ): Promise<{ payload: BackupPayload; cloudUpdatedAt?: number }> {
-    const [backupBytes, metaSnapshot] = await Promise.all([
-        getBytes(getCloudBackupRef(uid, services)),
-        getDoc(getCloudMetaRef(uid, services)),
-    ])
+    const metaSnapshot = await getDoc(getCloudMetaRef(uid, services))
 
-    const backupContent = new TextDecoder().decode(backupBytes)
-    const payload = parseBackupPayload(backupContent)
+    if (!metaSnapshot.exists()) {
+        throw new Error('云端还没有可恢复的备份，请先执行一次上传同步。')
+    }
 
     const metaData = metaSnapshot.data()
+    const chunkCount =
+        typeof metaData?.chunkCount === 'number' && Number.isFinite(metaData.chunkCount)
+            ? Math.max(Math.floor(metaData.chunkCount), 0)
+            : 0
+
+    if (chunkCount <= 0) {
+        throw new Error('云端备份数据不完整，请先重新执行一次上传同步。')
+    }
+
+    const chunkSnapshots = await Promise.all(
+        Array.from({ length: chunkCount }, (_, index) =>
+            getDoc(doc(services.db, 'users', uid, CLOUD_SYNC_META_COLLECTION, buildChunkDocumentId(index))),
+        ),
+    )
+
+    const chunkBase64List = chunkSnapshots.map((snapshot, index) => {
+        if (!snapshot.exists()) {
+            throw new Error(`云端备份分片缺失（chunk ${index + 1}/${chunkCount}）。`)
+        }
+
+        const chunkData = snapshot.data()?.data
+
+        if (typeof chunkData !== 'string' || chunkData.length === 0) {
+            throw new Error(`云端备份分片无效（chunk ${index + 1}/${chunkCount}）。`)
+        }
+
+        return chunkData
+    })
+
+    const mergedBytes = base64ToBytes(chunkBase64List.join(''))
+    const backupContent = new TextDecoder().decode(mergedBytes)
+    const payload = parseBackupPayload(backupContent)
     const cloudUpdatedAt = typeof metaData?.updatedAt === 'number' ? metaData.updatedAt : payload.exportedAt
 
     return { payload, cloudUpdatedAt }
