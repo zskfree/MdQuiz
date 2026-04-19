@@ -26,10 +26,10 @@ type ReviewStoreState = {
   }) => MemoryRecord
   getMemoryRecord: (libraryId: string, questionId: string) => MemoryRecord | undefined
   clearRecordsForLibrary: (libraryId: string) => Promise<number>
-  getDueCount: (now?: number) => number
+  getDueCount: (libraryId?: string, now?: number) => number
   getDueQuestionIds: (libraryId?: string, now?: number) => string[]
   getWrongQuestionIds: (libraryId?: string) => string[]
-  getLevelStats: () => Record<MemoryLevel, number>
+  getLevelStats: (libraryId?: string) => Record<MemoryLevel, number>
 }
 
 export const useReviewStore = create<ReviewStoreState>((set, get) => ({
@@ -99,8 +99,13 @@ export const useReviewStore = create<ReviewStoreState>((set, get) => ({
     return deletedCount
   },
 
-  getDueCount: (now = Date.now()) =>
-    getDueReviewQueue(Object.values(get().memoryRecords), now).length,
+  getDueCount: (libraryId, now = Date.now()) =>
+    getDueReviewQueue(
+      Object.values(get().memoryRecords).filter((record) =>
+        libraryId ? record.libraryId === libraryId : true,
+      ),
+      now,
+    ).length,
 
   getDueQuestionIds: (libraryId, now = Date.now()) =>
     getDueReviewQueue(
@@ -121,5 +126,10 @@ export const useReviewStore = create<ReviewStoreState>((set, get) => ({
       })
       .map((record) => record.questionId),
 
-  getLevelStats: () => getLevelDistribution(Object.values(get().memoryRecords)),
+  getLevelStats: (libraryId) =>
+    getLevelDistribution(
+      Object.values(get().memoryRecords).filter((record) =>
+        libraryId ? record.libraryId === libraryId : true,
+      ),
+    ),
 }))

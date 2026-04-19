@@ -180,6 +180,17 @@ async function purgeLibraryData(libraryId: string): Promise<void> {
   await clearLibraryRecords(libraryId)
 }
 
+function clearSessionOnLibrarySwitch(nextLibraryId: string): void {
+  void import('./sessionStore').then(({ useSessionStore }) => {
+    const sessionState = useSessionStore.getState()
+    const currentSession = sessionState.currentSession
+
+    if (currentSession && currentSession.libraryId !== nextLibraryId) {
+      sessionState.clearCurrentSession()
+    }
+  })
+}
+
 export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
   libraries: {},
   questions: {},
@@ -281,12 +292,20 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
   },
 
   setActiveLibrary: (libraryId) => {
-    if (!get().libraries[libraryId]) {
+    const state = get()
+
+    if (!state.libraries[libraryId]) {
+      return
+    }
+
+    if (state.activeLibraryId === libraryId) {
+      persistActiveLibraryId(libraryId)
       return
     }
 
     set({ activeLibraryId: libraryId })
     persistActiveLibraryId(libraryId)
+    clearSessionOnLibrarySwitch(libraryId)
   },
 
   importFiles: async (files) => {

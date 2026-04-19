@@ -18,7 +18,7 @@ type ExamStoreState = {
   clearResultsForLibrary: (libraryId: string) => Promise<number>
   submitCurrentExam: (timedOut?: boolean) => Promise<ExamResult | undefined>
   getResultBySessionId: (sessionId: string) => ExamResult | undefined
-  getRecentResults: () => ExamResult[]
+  getRecentResults: (libraryId?: string) => ExamResult[]
 }
 
 export const useExamStore = create<ExamStoreState>((set, get) => ({
@@ -128,6 +128,8 @@ export const useExamStore = create<ExamStoreState>((set, get) => ({
 
   getResultBySessionId: (sessionId) => get().results[sessionId],
 
-  getRecentResults: () =>
-    Object.values(get().results).sort((left, right) => right.submittedAt - left.submittedAt),
+  getRecentResults: (libraryId) =>
+    Object.values(get().results)
+      .filter((result) => (libraryId ? result.libraryId === libraryId : true))
+      .sort((left, right) => right.submittedAt - left.submittedAt),
 }))

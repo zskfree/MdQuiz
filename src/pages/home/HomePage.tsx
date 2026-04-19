@@ -13,13 +13,14 @@ export function HomePage() {
   const getRecentResults = useExamStore((state) => state.getRecentResults)
   const startSequentialSession = useSessionStore((state) => state.startSequentialSession)
   const startFilteredSession = useSessionStore((state) => state.startFilteredSession)
+  const activeLibraryId = activeLibrary?.id
 
   const allQuestionIds = getQuestionsForActiveLibrary().map((question) => question.id)
-  const dueCount = getDueCount()
-  const dueQuestionIds = activeLibrary ? getDueQuestionIds(activeLibrary.id) : []
-  const wrongQuestionIds = activeLibrary ? getWrongQuestionIds(activeLibrary.id) : []
-  const levelStats = getLevelStats()
-  const examResults = getRecentResults()
+  const dueCount = getDueCount(activeLibraryId)
+  const dueQuestionIds = activeLibraryId ? getDueQuestionIds(activeLibraryId) : []
+  const wrongQuestionIds = activeLibraryId ? getWrongQuestionIds(activeLibraryId) : []
+  const levelStats = getLevelStats(activeLibraryId)
+  const examResults = getRecentResults(activeLibraryId)
   const recentExamResults = examResults.slice(0, 7)
   const trendExamResults = [...recentExamResults].reverse()
   const totalTracked = useMemo(
