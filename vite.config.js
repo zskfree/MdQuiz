@@ -30,6 +30,22 @@ export default defineConfig(function (_a) {
         plugins: [react()],
         // Build base path is inferred from CI repository to avoid hardcoded project paths.
         base: command === 'build' ? resolveProductionBase() : '/',
+        build: {
+            cssCodeSplit: false,
+            rollupOptions: {
+                output: {
+                    entryFileNames: 'assets/index.js',
+                    chunkFileNames: 'assets/chunk-[hash].js',
+                    assetFileNames: function (assetInfo) {
+                        var assetName = assetInfo.name || '';
+                        if (assetName.slice(-4) === '.css') {
+                            return 'assets/index.css';
+                        }
+                        return 'assets/[name]-[hash][extname]';
+                    },
+                },
+            },
+        },
         server: {
             host: '127.0.0.1',
             port: 5173,

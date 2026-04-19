@@ -46,7 +46,47 @@
 
 <body>
   <div id="root"></div>
-  <script type="module" src="/src/main.tsx"></script>
+  <script type="module">
+    const localHosts = new Set(['localhost', '127.0.0.1'])
+    const isLocalDev = localHosts.has(window.location.hostname)
+
+    const appendStyle = (href) => {
+      const link = document.createElement('link')
+      link.rel = 'stylesheet'
+      link.href = href
+      link.crossOrigin = 'anonymous'
+      document.head.appendChild(link)
+    }
+
+    const bootstrap = async () => {
+      if (isLocalDev) {
+        await import('/src/main.tsx')
+        return
+      }
+
+      // Deploy fallback: allow both correct root publish and mistaken repo-root publish.
+      appendStyle('/assets/index.css')
+      appendStyle('/dist/assets/index.css')
+
+      const candidates = ['/assets/index.js', '/dist/assets/index.js']
+      for (const entry of candidates) {
+        try {
+          await import(entry)
+          return
+        } catch {
+          // Try next candidate.
+        }
+      }
+
+      const hint = document.createElement('p')
+      hint.style.padding = '16px'
+      hint.style.color = '#b91c1c'
+      hint.textContent = '页面资源加载失败：请确认服务器发布的是 dist 目录内容。'
+      document.body.appendChild(hint)
+    }
+
+    void bootstrap()
+  </script>
 </body>
 
 </html>

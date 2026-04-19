@@ -2,7 +2,7 @@
   "id": "builtin-default",
   "name": "内置题库",
   "sourceType": "builtin",
-  "version": "2026-04-19T06:27:44.821Z",
+  "version": "2026-04-19T06:32:32.398Z",
   "questionIds": [
     "trader-2025-10-001",
     "trader-2025-10-002",
@@ -797,8 +797,8 @@
   ],
   "questionCount": 790,
   "scorableCount": 790,
-  "createdAt": 1776580064821,
-  "updatedAt": 1776580064821,
+  "createdAt": 1776580352398,
+  "updatedAt": 1776580352398,
   "meta": {
     "diagnosticsCount": 0
   }
