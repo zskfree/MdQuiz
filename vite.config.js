@@ -9,13 +9,23 @@ function readEnv(name) {
     var envSource = (_a = globalThis.process) === null || _a === void 0 ? void 0 : _a.env;
     return envSource === null || envSource === void 0 ? void 0 : envSource[name];
 }
+function readRepositoryFromWorkingDirectory() {
+    var cwd = readEnv('INIT_CWD') || readEnv('PWD') || readEnv('npm_config_local_prefix');
+    if (!cwd) {
+        return undefined;
+    }
+    var parts = cwd.split(/[\\/]+/).filter(Boolean);
+    var _a = parts[parts.length - 1], repository = _a === void 0 ? void 0 : _a.trim();
+    return repository || undefined;
+}
 function resolveProductionBase() {
     var _a;
     var envBase = readEnv('VITE_BASE_PATH');
     if (envBase && envBase.trim().length > 0) {
         return normalizeBasePath(envBase);
     }
-    var repository = (_a = readEnv('GITHUB_REPOSITORY')) === null || _a === void 0 ? void 0 : _a.split('/')[1];
+    var repositoryFromCi = (_a = readEnv('GITHUB_REPOSITORY')) === null || _a === void 0 ? void 0 : _a.split('/')[1];
+    var repository = repositoryFromCi || readRepositoryFromWorkingDirectory();
     if (!repository) {
         return '/';
     }

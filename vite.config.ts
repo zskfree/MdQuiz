@@ -11,6 +11,19 @@ function readEnv(name: string): string | undefined {
   return envSource?.[name]
 }
 
+function readRepositoryFromWorkingDirectory(): string | undefined {
+  const cwd = readEnv('INIT_CWD') || readEnv('PWD') || readEnv('npm_config_local_prefix')
+
+  if (!cwd) {
+    return undefined
+  }
+
+  const parts = cwd.split(/[\\/]+/).filter(Boolean)
+  const repository = parts[parts.length - 1]?.trim()
+
+  return repository || undefined
+}
+
 function resolveProductionBase(): string {
   const envBase = readEnv('VITE_BASE_PATH')
 
@@ -18,7 +31,8 @@ function resolveProductionBase(): string {
     return normalizeBasePath(envBase)
   }
 
-  const repository = readEnv('GITHUB_REPOSITORY')?.split('/')[1]
+  const repositoryFromCi = readEnv('GITHUB_REPOSITORY')?.split('/')[1]
+  const repository = repositoryFromCi || readRepositoryFromWorkingDirectory()
 
   if (!repository) {
     return '/'
