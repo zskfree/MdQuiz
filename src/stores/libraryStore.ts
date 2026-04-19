@@ -233,6 +233,7 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
     set({ isLoading: true, error: undefined })
 
     try {
+      const preferredActiveLibraryId = readPersistedActiveLibraryId() ?? get().activeLibraryId
       const { manifests, questions, diagnostics } = await fetchBuiltinLibraries()
       const currentBuiltinIds = Object.values(get().libraries)
         .filter((library) => library.sourceType === 'builtin')
@@ -258,7 +259,7 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
         ...stateWithoutBuiltin.diagnostics,
         ...buildDiagnosticsMap(diagnostics),
       }
-      const nextActiveLibraryId = resolveActiveLibraryId(nextLibraries, stateWithoutBuiltin.activeLibraryId)
+      const nextActiveLibraryId = resolveActiveLibraryId(nextLibraries, preferredActiveLibraryId)
 
       set({
         libraries: nextLibraries,
