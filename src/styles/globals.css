@@ -594,6 +594,18 @@ select {
   background: #fff;
 }
 
+.field select {
+  width: 100%;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  padding: 12px 14px;
+  background: #fff;
+}
+
+.inline-field {
+  min-width: 220px;
+}
+
 .navigation-grid {
   display: flex;
   flex-wrap: wrap;

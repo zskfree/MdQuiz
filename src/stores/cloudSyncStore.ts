@@ -26,11 +26,13 @@ type CloudSyncState = {
     user?: CloudUser
     isSyncing: boolean
     autoSyncEnabled: boolean
+    autoSyncIntervalMinutes: number
     lastSyncedAt?: number
     lastCloudUpdatedAt?: number
     lastError?: string
     initialize: () => void
     setAutoSyncEnabled: (enabled: boolean) => void
+    setAutoSyncIntervalMinutes: (minutes: number) => void
     signInWithGoogle: () => Promise<void>
     signOut: () => Promise<void>
     uploadNow: () => Promise<void>
@@ -38,6 +40,10 @@ type CloudSyncState = {
 }
 
 const AUTO_SYNC_STORAGE_KEY = 'mdquiz.cloud.autoSyncEnabled'
+const AUTO_SYNC_INTERVAL_STORAGE_KEY = 'mdquiz.cloud.autoSyncIntervalMinutes'
+const DEFAULT_AUTO_SYNC_INTERVAL_MINUTES = 3
+const MIN_AUTO_SYNC_INTERVAL_MINUTES = 1
+const MAX_AUTO_SYNC_INTERVAL_MINUTES = 60
 const CLOUD_SYNC_META_COLLECTION = 'sync'
 const CLOUD_SYNC_META_DOC_ID = 'meta'
 const FIRESTORE_CHUNK_MAX_BYTES = 450 * 1024
@@ -63,6 +69,47 @@ function persistAutoSyncSetting(enabled: boolean): void {
     }
 
     window.localStorage.removeItem(AUTO_SYNC_STORAGE_KEY)
+}
+
+function normalizeAutoSyncIntervalMinutes(minutes: number): number {
+    if (!Number.isFinite(minutes)) {
+        return DEFAULT_AUTO_SYNC_INTERVAL_MINUTES
+    }
+
+    const normalized = Math.floor(minutes)
+
+    if (normalized < MIN_AUTO_SYNC_INTERVAL_MINUTES) {
+        return MIN_AUTO_SYNC_INTERVAL_MINUTES
+    }
+
+    if (normalized > MAX_AUTO_SYNC_INTERVAL_MINUTES) {
+        return MAX_AUTO_SYNC_INTERVAL_MINUTES
+    }
+
+    return normalized
+}
+
+function readAutoSyncIntervalSetting(): number {
+    if (typeof window === 'undefined') {
+        return DEFAULT_AUTO_SYNC_INTERVAL_MINUTES
+    }
+
+    const raw = window.localStorage.getItem(AUTO_SYNC_INTERVAL_STORAGE_KEY)
+
+    if (!raw) {
+        return DEFAULT_AUTO_SYNC_INTERVAL_MINUTES
+    }
+
+    return normalizeAutoSyncIntervalMinutes(Number.parseInt(raw, 10))
+}
+
+function persistAutoSyncIntervalSetting(minutes: number): void {
+    if (typeof window === 'undefined') {
+        return
+    }
+
+    const normalized = normalizeAutoSyncIntervalMinutes(minutes)
+    window.localStorage.setItem(AUTO_SYNC_INTERVAL_STORAGE_KEY, String(normalized))
 }
 
 function mapAuthUser(user: User): CloudUser {
@@ -293,6 +340,7 @@ export const useCloudSyncStore = create<CloudSyncState>((set, get) => ({
     user: undefined,
     isSyncing: false,
     autoSyncEnabled: readAutoSyncSetting(),
+    autoSyncIntervalMinutes: readAutoSyncIntervalSetting(),
     lastSyncedAt: undefined,
     lastCloudUpdatedAt: undefined,
     lastError: undefined,
@@ -307,7 +355,11 @@ export const useCloudSyncStore = create<CloudSyncState>((set, get) => ({
         }
 
         if (hasInitializedAuthListener) {
-            set({ initialized: true, autoSyncEnabled: readAutoSyncSetting() })
+            set({
+                initialized: true,
+                autoSyncEnabled: readAutoSyncSetting(),
+                autoSyncIntervalMinutes: readAutoSyncIntervalSetting(),
+            })
             return
         }
 
@@ -324,6 +376,7 @@ export const useCloudSyncStore = create<CloudSyncState>((set, get) => ({
         set({
             initialized: true,
             autoSyncEnabled: readAutoSyncSetting(),
+            autoSyncIntervalMinutes: readAutoSyncIntervalSetting(),
             lastError: undefined,
         })
     },
@@ -331,6 +384,12 @@ export const useCloudSyncStore = create<CloudSyncState>((set, get) => ({
     setAutoSyncEnabled: (enabled) => {
         persistAutoSyncSetting(enabled)
         set({ autoSyncEnabled: enabled })
+    },
+
+    setAutoSyncIntervalMinutes: (minutes) => {
+        const normalized = normalizeAutoSyncIntervalMinutes(minutes)
+        persistAutoSyncIntervalSetting(normalized)
+        set({ autoSyncIntervalMinutes: normalized })
     },
 
     signInWithGoogle: async () => {

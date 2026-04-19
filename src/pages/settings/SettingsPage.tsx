@@ -8,6 +8,8 @@ import {
   useSessionStore,
 } from '../../stores'
 
+const AUTO_SYNC_INTERVAL_OPTIONS = [1, 3, 5, 10, 15, 30]
+
 function downloadJson(filename: string, content: string) {
   const blob = new Blob([content], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
@@ -57,10 +59,12 @@ export function SettingsPage() {
   const cloudUser = useCloudSyncStore((state) => state.user)
   const isCloudSyncing = useCloudSyncStore((state) => state.isSyncing)
   const autoSyncEnabled = useCloudSyncStore((state) => state.autoSyncEnabled)
+  const autoSyncIntervalMinutes = useCloudSyncStore((state) => state.autoSyncIntervalMinutes)
   const cloudLastSyncedAt = useCloudSyncStore((state) => state.lastSyncedAt)
   const cloudLastCloudUpdatedAt = useCloudSyncStore((state) => state.lastCloudUpdatedAt)
   const cloudLastError = useCloudSyncStore((state) => state.lastError)
   const setAutoSyncEnabled = useCloudSyncStore((state) => state.setAutoSyncEnabled)
+  const setAutoSyncIntervalMinutes = useCloudSyncStore((state) => state.setAutoSyncIntervalMinutes)
   const signInWithGoogle = useCloudSyncStore((state) => state.signInWithGoogle)
   const signOutFromCloud = useCloudSyncStore((state) => state.signOut)
   const uploadNow = useCloudSyncStore((state) => state.uploadNow)
@@ -140,6 +144,18 @@ export function SettingsPage() {
     setAutoSyncEnabled(nextEnabled)
     setError(undefined)
     setMessage(nextEnabled ? '已开启自动同步。' : '已关闭自动同步。')
+  }
+
+  const handleAutoSyncIntervalChange: React.ChangeEventHandler<HTMLSelectElement> = (event) => {
+    const nextMinutes = Number.parseInt(event.target.value, 10)
+
+    if (!Number.isFinite(nextMinutes)) {
+      return
+    }
+
+    setAutoSyncIntervalMinutes(nextMinutes)
+    setError(undefined)
+    setMessage(`自动同步间隔已更新为 ${nextMinutes} 分钟。`)
   }
 
   const handleExport = () => {
@@ -279,10 +295,27 @@ export function SettingsPage() {
           >
             {autoSyncEnabled ? '关闭自动同步' : '开启自动同步'}
           </button>
+
+          <label className="field inline-field">
+            自动同步间隔
+            <select
+              value={String(autoSyncIntervalMinutes)}
+              onChange={handleAutoSyncIntervalChange}
+              disabled={!cloudUser}
+            >
+              {AUTO_SYNC_INTERVAL_OPTIONS.map((minutes) => (
+                <option key={minutes} value={minutes}>
+                  {minutes} 分钟
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
 
         <p className="muted">登录账号：{cloudUser ? cloudAccountName : '未登录'}</p>
-        <p className="muted">自动同步：{autoSyncEnabled ? '已开启（前台在线状态定时同步）' : '未开启'}</p>
+        <p className="muted">
+          自动同步：{autoSyncEnabled ? `已开启（前台在线状态每 ${autoSyncIntervalMinutes} 分钟同步）` : '未开启'}
+        </p>
         <p className="muted">最近同步时间：{cloudLastSyncedAt ? formatDateTime(cloudLastSyncedAt) : '暂无'}</p>
         <p className="muted">
           云端最近更新时间：{cloudLastCloudUpdatedAt ? formatDateTime(cloudLastCloudUpdatedAt) : '暂无'}

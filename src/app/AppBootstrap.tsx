@@ -7,8 +7,6 @@ import {
   useSessionStore,
 } from '../stores'
 
-const AUTO_SYNC_INTERVAL_MS = 3 * 60 * 1000
-
 export function AppBootstrap() {
   const initializeExam = useExamStore((state) => state.initialize)
   const initializeLibraries = useLibraryStore((state) => state.initialize)
@@ -17,6 +15,7 @@ export function AppBootstrap() {
   const initializeCloudSync = useCloudSyncStore((state) => state.initialize)
   const cloudUserId = useCloudSyncStore((state) => state.user?.uid)
   const autoSyncEnabled = useCloudSyncStore((state) => state.autoSyncEnabled)
+  const autoSyncIntervalMinutes = useCloudSyncStore((state) => state.autoSyncIntervalMinutes)
   const uploadNow = useCloudSyncStore((state) => state.uploadNow)
 
   useEffect(() => {
@@ -44,9 +43,11 @@ export function AppBootstrap() {
       void uploadNow()
     }
 
+    const autoSyncIntervalMs = Math.max(1, autoSyncIntervalMinutes) * 60 * 1000
+
     triggerAutoSync()
 
-    const timer = window.setInterval(triggerAutoSync, AUTO_SYNC_INTERVAL_MS)
+    const timer = window.setInterval(triggerAutoSync, autoSyncIntervalMs)
     window.addEventListener('online', triggerAutoSync)
     document.addEventListener('visibilitychange', triggerAutoSync)
 
@@ -55,7 +56,7 @@ export function AppBootstrap() {
       window.removeEventListener('online', triggerAutoSync)
       document.removeEventListener('visibilitychange', triggerAutoSync)
     }
-  }, [autoSyncEnabled, cloudUserId, uploadNow])
+  }, [autoSyncEnabled, autoSyncIntervalMinutes, cloudUserId, uploadNow])
 
   return null
 }
