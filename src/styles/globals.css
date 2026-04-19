@@ -158,6 +158,12 @@ select {
   display: none;
 }
 
+.mobile-topbar-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .mobile-menu-button {
   border-radius: 14px;
   border: 1px solid var(--line);
@@ -250,6 +256,17 @@ select {
   white-space: nowrap;
 }
 
+.quick-mode-tools {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.quick-mode-mark-toggle {
+  white-space: nowrap;
+}
+
 .quick-mode-title {
   margin: 0;
   font-size: clamp(1.4rem, 4vw, 2.2rem);
@@ -265,11 +282,11 @@ select {
   margin-top: -2px;
 }
 
-.markdown-content > :first-child {
+.markdown-content> :first-child {
   margin-top: 0;
 }
 
-.markdown-content > :last-child {
+.markdown-content> :last-child {
   margin-bottom: 0;
 }
 
@@ -293,7 +310,7 @@ select {
   font-family: Consolas, "Courier New", monospace;
 }
 
-.markdown-content :not(pre) > code {
+.markdown-content :not(pre)>code {
   padding: 0.15em 0.4em;
   border-radius: 8px;
   background: #edf2f7;
@@ -534,6 +551,10 @@ select {
 }
 
 @media (max-width: 900px) {
+  body.quick-mode-active {
+    overflow: hidden;
+  }
+
   .app-shell {
     grid-template-columns: 1fr;
   }
@@ -568,9 +589,18 @@ select {
   .mobile-topbar {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start;
     gap: 12px;
-    margin-bottom: 16px;
+    margin-bottom: 10px;
+  }
+
+  .mobile-topbar-title {
+    font-size: 1rem;
+    font-weight: 700;
+  }
+
+  .page-header {
+    display: none;
   }
 
   .grid-two {
@@ -579,6 +609,18 @@ select {
 
   .app-main {
     padding: 20px;
+  }
+
+  body.quick-mode-active .app-main {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  body.quick-mode-active .mobile-topbar {
+    flex: 0 0 auto;
+    margin-bottom: 10px;
   }
 
   .action-row {
@@ -601,55 +643,182 @@ select {
     grid-template-columns: 1fr;
   }
 
+  .practice-page:not(.quick-mode) {
+    gap: 10px;
+  }
+
+  .practice-page:not(.quick-mode) .card {
+    padding: 16px;
+    border-radius: 18px;
+  }
+
+  .practice-page:not(.quick-mode) .practice-layout {
+    gap: 14px;
+  }
+
+  .practice-page:not(.quick-mode) .practice-topbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .practice-page:not(.quick-mode) .practice-progress {
+    display: block;
+    font-size: 0.9rem;
+    line-height: 1.3;
+  }
+
+  .practice-page:not(.quick-mode) .quick-mode-toggle {
+    min-height: 38px;
+    padding: 9px 12px;
+    border-radius: 10px;
+    font-size: 0.88rem;
+  }
+
+  .practice-page:not(.quick-mode) h3 {
+    font-size: clamp(1.08rem, 4.9vw, 1.45rem);
+    line-height: 1.32;
+    margin-bottom: 8px;
+  }
+
+  .practice-page:not(.quick-mode) .question-body {
+    font-size: 0.98rem;
+    line-height: 1.5;
+    margin-bottom: 10px;
+  }
+
+  .practice-page:not(.quick-mode) .markdown-content p,
+  .practice-page:not(.quick-mode) .markdown-content ul,
+  .practice-page:not(.quick-mode) .markdown-content ol,
+  .practice-page:not(.quick-mode) .markdown-content pre,
+  .practice-page:not(.quick-mode) .markdown-content blockquote {
+    margin-bottom: 0.75rem;
+  }
+
+  .practice-page:not(.quick-mode) .option-list {
+    gap: 14px;
+  }
+
+  .practice-page:not(.quick-mode) .option-button {
+    gap: 10px;
+    padding: 14px 15px;
+    border-radius: 12px;
+    font-size: 1rem;
+    line-height: 1.35;
+  }
+
+  .practice-page:not(.quick-mode) .option-button strong {
+    min-width: 1.1rem;
+    font-size: 1rem;
+  }
+
+  .practice-page:not(.quick-mode) .question-actions {
+    margin-top: 12px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .practice-page:not(.quick-mode) .question-actions .secondary-button,
+  .practice-page:not(.quick-mode) .question-actions .action-button {
+    min-height: 44px;
+    padding: 10px 8px;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    line-height: 1.2;
+  }
+
+  .practice-page:not(.quick-mode) .nav-panel {
+    gap: 10px;
+  }
+
+  .practice-page:not(.quick-mode) .feedback {
+    padding: 14px;
+    font-size: 0.95rem;
+  }
+
+  .practice-page:not(.quick-mode) .feedback .muted {
+    font-size: 0.85rem;
+    line-height: 1.4;
+  }
+
   .practice-page.quick-mode {
     min-height: calc(100svh - 72px);
   }
 
+  body.quick-mode-active .practice-page.quick-mode {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: auto;
+    overflow: hidden;
+  }
+
   .practice-page.quick-mode .quick-mode-card {
-    padding: 12px;
+    padding: 14px;
     border-radius: 18px;
     min-height: calc(100svh - 92px);
+  }
+
+  body.quick-mode-active .practice-page.quick-mode .quick-mode-card {
+    min-height: 0;
+    height: 100%;
+    display: flex;
+    overflow: hidden;
   }
 
   .practice-page.quick-mode .practice-layout {
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    gap: 10px;
+    gap: 16px;
     min-height: 100%;
+  }
+
+  body.quick-mode-active .practice-page.quick-mode .practice-layout {
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
   }
 
   .practice-page.quick-mode .practice-topbar {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
+    gap: 10px;
+  }
+
+  .practice-page.quick-mode .quick-mode-tools {
     gap: 8px;
   }
 
   .practice-page.quick-mode .quick-mode-progress {
     display: block;
-    font-size: 0.8rem;
+    font-size: 0.9rem;
     line-height: 1.2;
   }
 
+  .practice-page.quick-mode .quick-mode-mark-toggle,
   .practice-page.quick-mode .quick-mode-toggle {
     width: auto;
-    min-height: 32px;
-    padding: 6px 10px;
+    min-height: 38px;
+    padding: 9px 12px;
     border-radius: 10px;
-    font-size: 0.8rem;
+    font-size: 0.88rem;
   }
 
   .practice-page.quick-mode .quick-mode-title {
-    font-size: clamp(1rem, 4.7vw, 1.35rem);
+    font-size: clamp(1.08rem, 4.9vw, 1.45rem);
     line-height: 1.3;
-    margin-top: 2px;
+    margin-top: 4px;
+    margin-bottom: 8px;
   }
 
   .practice-page.quick-mode .question-body {
-    font-size: 0.92rem;
-    line-height: 1.45;
+    font-size: 0.98rem;
+    line-height: 1.5;
     margin-top: 0;
+    margin-bottom: 10px;
   }
 
   .practice-page.quick-mode .markdown-content p,
@@ -657,41 +826,50 @@ select {
   .practice-page.quick-mode .markdown-content ol,
   .practice-page.quick-mode .markdown-content pre,
   .practice-page.quick-mode .markdown-content blockquote {
-    margin-bottom: 0.55rem;
+    margin-bottom: 0.75rem;
   }
 
   .practice-page.quick-mode .option-list {
-    flex: 1 1 auto;
+    flex: 0 0 auto;
     align-content: start;
-    gap: 7px;
+    gap: 16px;
+  }
+
+  body.quick-mode-active .practice-page.quick-mode .option-list {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-right: 2px;
   }
 
   .practice-page.quick-mode .option-button {
-    gap: 8px;
-    padding: 10px 11px;
+    gap: 10px;
+    padding: 14px 15px;
     border-radius: 12px;
-    font-size: 0.9rem;
-    line-height: 1.3;
+    font-size: 1rem;
+    line-height: 1.35;
   }
 
   .practice-page.quick-mode .option-button strong {
-    min-width: 1rem;
-    font-size: 0.95rem;
+    min-width: 1.1rem;
+    font-size: 1rem;
   }
 
-  .practice-page.quick-mode .question-actions {
-    margin-top: 6px;
+  .practice-page.quick-mode .quick-nav-actions {
+    margin-top: 2px;
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 6px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
   }
 
+  .practice-page.quick-mode .quick-nav-actions .secondary-button,
   .practice-page.quick-mode .question-actions .secondary-button,
   .practice-page.quick-mode .question-actions .action-button {
-    min-height: 34px;
-    padding: 6px 4px;
+    min-height: 44px;
+    padding: 10px 8px;
     border-radius: 10px;
-    font-size: 0.78rem;
+    font-size: 0.9rem;
     line-height: 1.2;
   }
 }
@@ -701,40 +879,135 @@ select {
     padding: 14px;
   }
 
+  .mobile-topbar {
+    margin-bottom: 8px;
+  }
+
+  .mobile-topbar-main {
+    gap: 8px;
+  }
+
+  .mobile-topbar-title {
+    font-size: 0.96rem;
+  }
+
+  body.quick-mode-active .app-main {
+    padding: 12px;
+  }
+
+  body.quick-mode-active .mobile-topbar {
+    margin-bottom: 8px;
+  }
+
   .practice-page.quick-mode {
     min-height: calc(100svh - 64px);
   }
 
   .practice-page.quick-mode .quick-mode-card {
-    padding: 10px;
+    padding: 12px;
     min-height: calc(100svh - 76px);
   }
 
+  .practice-page:not(.quick-mode) .card {
+    padding: 14px;
+  }
+
+  .practice-page:not(.quick-mode) .practice-layout {
+    gap: 12px;
+  }
+
+  .practice-page:not(.quick-mode) .practice-topbar {
+    gap: 8px;
+  }
+
+  .practice-page:not(.quick-mode) .quick-mode-toggle {
+    min-height: 36px;
+    padding: 8px 10px;
+    font-size: 0.84rem;
+  }
+
+  .practice-page:not(.quick-mode) h3 {
+    font-size: 1.08rem;
+  }
+
+  .practice-page:not(.quick-mode) .question-body {
+    font-size: 0.95rem;
+  }
+
+  .practice-page:not(.quick-mode) .option-list {
+    gap: 12px;
+  }
+
+  .practice-page:not(.quick-mode) .option-button {
+    padding: 13px 12px;
+    font-size: 0.95rem;
+  }
+
+  .practice-page:not(.quick-mode) .question-actions {
+    gap: 10px;
+  }
+
+  .practice-page:not(.quick-mode) .question-actions .secondary-button,
+  .practice-page:not(.quick-mode) .question-actions .action-button {
+    min-height: 42px;
+    padding: 9px 6px;
+    font-size: 0.84rem;
+  }
+
+  .practice-page:not(.quick-mode) .feedback {
+    font-size: 0.9rem;
+  }
+
+  .practice-page:not(.quick-mode) .feedback .muted {
+    font-size: 0.8rem;
+  }
+
   .practice-page.quick-mode .practice-layout {
-    gap: 9px;
+    gap: 14px;
   }
 
-  .practice-page.quick-mode .quick-mode-title {
-    font-size: 1rem;
+  .practice-page.quick-mode .practice-topbar {
+    gap: 8px;
   }
 
-  .practice-page.quick-mode .question-body {
-    font-size: 0.88rem;
-  }
-
-  .practice-page.quick-mode .option-list {
+  .practice-page.quick-mode .quick-mode-tools {
     gap: 6px;
   }
 
-  .practice-page.quick-mode .option-button {
-    padding: 9px 10px;
-    font-size: 0.86rem;
+  .practice-page.quick-mode .quick-mode-mark-toggle,
+  .practice-page.quick-mode .quick-mode-toggle {
+    min-height: 36px;
+    padding: 8px 10px;
+    font-size: 0.84rem;
   }
 
+  .practice-page.quick-mode .quick-mode-title {
+    font-size: 1.08rem;
+  }
+
+  .practice-page.quick-mode .question-body {
+    font-size: 0.95rem;
+  }
+
+  .practice-page.quick-mode .option-list {
+    gap: 12px;
+  }
+
+  .practice-page.quick-mode .option-button {
+    padding: 13px 12px;
+    font-size: 0.95rem;
+  }
+
+  .practice-page.quick-mode .quick-nav-actions,
+  .practice-page.quick-mode .question-actions {
+    gap: 10px;
+  }
+
+  .practice-page.quick-mode .quick-nav-actions .secondary-button,
   .practice-page.quick-mode .question-actions .secondary-button,
   .practice-page.quick-mode .question-actions .action-button {
-    min-height: 32px;
-    padding: 5px 2px;
-    font-size: 0.72rem;
+    min-height: 42px;
+    padding: 9px 6px;
+    font-size: 0.84rem;
   }
 }

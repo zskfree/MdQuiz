@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
 
 const navItems = [
   { to: '/', label: '复习看板', shortLabel: '看', end: true },
@@ -13,6 +13,15 @@ export function AppShell() {
   const [sidebarExpanded, setSidebarExpanded] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const location = useLocation()
+
+  const currentPageLabel = navItems.find((item) => {
+    if (item.end) {
+      return location.pathname === item.to
+    }
+
+    return location.pathname === item.to || location.pathname.startsWith(`${item.to}/`)
+  })?.label
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(max-width: 900px)')
@@ -118,15 +127,17 @@ export function AppShell() {
       <main className="app-main">
         {isMobile ? (
           <div className="mobile-topbar">
-            <button
-              type="button"
-              className="mobile-menu-button"
-              aria-label="打开菜单"
-              onClick={() => setMobileMenuOpen(true)}
-            >
-              菜单
-            </button>
-            <div className="mobile-topbar-title">MdQuiz</div>
+            <div className="mobile-topbar-main">
+              <button
+                type="button"
+                className="mobile-menu-button"
+                aria-label="打开菜单"
+                onClick={() => setMobileMenuOpen(true)}
+              >
+                菜单
+              </button>
+              <div className="mobile-topbar-title">{currentPageLabel ?? 'MdQuiz'}</div>
+            </div>
           </div>
         ) : null}
         <Outlet />

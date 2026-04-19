@@ -7,7 +7,7 @@ function shuffle<T>(items: T[]): T[] {
 
   for (let index = next.length - 1; index > 0; index -= 1) {
     const swapIndex = Math.floor(Math.random() * (index + 1))
-    ;[next[index], next[swapIndex]] = [next[swapIndex], next[index]]
+      ;[next[index], next[swapIndex]] = [next[swapIndex], next[index]]
   }
 
   return next
@@ -132,6 +132,24 @@ export function ExamPage() {
 
   const handleSubmitExam = () => {
     void submitCurrentExam(false)
+  }
+
+  const scrollToPageTop = () => {
+    const appMain = document.querySelector('.app-main')
+
+    if (appMain instanceof HTMLElement) {
+      appMain.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const handleJumpToQuestion = (index: number) => {
+    setCurrentIndex(index)
+
+    window.requestAnimationFrame(() => {
+      scrollToPageTop()
+    })
   }
 
   const isExamSession = currentSession?.mode === 'exam'
@@ -269,7 +287,7 @@ export function ExamPage() {
                           answered,
                           marked,
                         })}
-                        onClick={() => setCurrentIndex(index)}
+                        onClick={() => handleJumpToQuestion(index)}
                       >
                         {index + 1}
                       </button>

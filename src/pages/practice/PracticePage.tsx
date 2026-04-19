@@ -90,6 +90,18 @@ export function PracticePage() {
     revealedExplanation: false,
   }
 
+  useEffect(() => {
+    if (quickMode) {
+      document.body.classList.add('quick-mode-active')
+    } else {
+      document.body.classList.remove('quick-mode-active')
+    }
+
+    return () => {
+      document.body.classList.remove('quick-mode-active')
+    }
+  }, [quickMode])
+
   const expectedAnswers = useMemo(() => {
     if (feedback && feedback.questionId === currentQuestion?.id) {
       return new Set(feedback.expected)
@@ -233,6 +245,37 @@ export function PracticePage() {
     })
   }
 
+  const handleNextAction = () => {
+    if (quickMode && !resolvedAnswer.submitted) {
+      if (resolvedAnswer.selected.length === 0) {
+        return
+      }
+
+      submitCurrentAnswer()
+      return
+    }
+
+    goToNextQuestion()
+  }
+
+  const scrollToPageTop = () => {
+    const appMain = document.querySelector('.app-main')
+
+    if (appMain instanceof HTMLElement) {
+      appMain.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const handleJumpToQuestion = (index: number) => {
+    setCurrentIndex(index)
+
+    window.requestAnimationFrame(() => {
+      scrollToPageTop()
+    })
+  }
+
   if (!currentSession || !currentQuestion) {
     return (
       <section className="page">
@@ -292,9 +335,24 @@ export function PracticePage() {
               {!quickMode && memoryRecord ? <span className="muted">记忆等级：L{memoryRecord.level}</span> : null}
             </div>
 
-            <button type="button" className="secondary-button quick-mode-toggle" onClick={toggleQuickMode}>
-              {quickMode ? '退出快速刷题' : '开启快速刷题'}
-            </button>
+            {quickMode ? (
+              <div className="quick-mode-tools">
+                <button
+                  type="button"
+                  className="secondary-button quick-mode-mark-toggle"
+                  onClick={() => toggleMarkedQuestion(currentQuestion.id)}
+                >
+                  {currentSession.marks[currentQuestion.id] ? '取消标记' : '标记回看'}
+                </button>
+                <button type="button" className="secondary-button quick-mode-toggle" onClick={toggleQuickMode}>
+                  退出快速刷题
+                </button>
+              </div>
+            ) : (
+              <button type="button" className="secondary-button quick-mode-toggle" onClick={toggleQuickMode}>
+                开启快速刷题
+              </button>
+            )}
           </div>
 
           <h3 className={quickMode ? 'quick-mode-title' : undefined}>{currentQuestion.title}</h3>
@@ -329,39 +387,54 @@ export function PracticePage() {
             })}
           </div>
 
-          <div className="action-row question-actions">
-            <button
-              className="secondary-button"
-              onClick={goToPreviousQuestion}
-              disabled={currentSession.currentIndex === 0}
-            >
-              上一题
-            </button>
-            <button
-              className="secondary-button"
-              onClick={goToNextQuestion}
-              disabled={!resolvedAnswer.submitted}
-            >
-              下一题
-            </button>
-            <button
-              className="secondary-button"
-              onClick={() => toggleMarkedQuestion(currentQuestion.id)}
-            >
-              {currentSession.marks[currentQuestion.id] ? '取消标记' : '标记回看'}
-            </button>
-            <button
-              className="action-button"
-              onClick={submitCurrentAnswer}
-              disabled={
-                resolvedAnswer.selected.length === 0 ||
-                resolvedAnswer.submitted ||
-                (quickMode && currentQuestion.type !== 'multiple')
-              }
-            >
-              提交答案
-            </button>
-          </div>
+          {quickMode ? (
+            <div className="action-row quick-nav-actions">
+              <button
+                className="secondary-button"
+                onClick={goToPreviousQuestion}
+                disabled={currentSession.currentIndex === 0}
+              >
+                上一题
+              </button>
+              <button
+                className="secondary-button"
+                onClick={handleNextAction}
+                disabled={resolvedAnswer.selected.length === 0}
+              >
+                下一题
+              </button>
+            </div>
+          ) : (
+            <div className="action-row question-actions">
+              <button
+                className="secondary-button"
+                onClick={goToPreviousQuestion}
+                disabled={currentSession.currentIndex === 0}
+              >
+                上一题
+              </button>
+              <button
+                className="secondary-button"
+                onClick={goToNextQuestion}
+                disabled={!resolvedAnswer.submitted}
+              >
+                下一题
+              </button>
+              <button
+                className="secondary-button"
+                onClick={() => toggleMarkedQuestion(currentQuestion.id)}
+              >
+                {currentSession.marks[currentQuestion.id] ? '取消标记' : '标记回看'}
+              </button>
+              <button
+                className="action-button"
+                onClick={submitCurrentAnswer}
+                disabled={resolvedAnswer.selected.length === 0 || resolvedAnswer.submitted}
+              >
+                提交答案
+              </button>
+            </div>
+          )}
 
           {!quickMode ? (
             <div className="nav-panel nav-panel-bottom">
@@ -393,7 +466,7 @@ export function PracticePage() {
                           marked,
                           current: currentSession.currentIndex === index,
                         })}
-                        onClick={() => setCurrentIndex(index)}
+                        onClick={() => handleJumpToQuestion(index)}
                       >
                         {index + 1}
                       </button>
