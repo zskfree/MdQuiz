@@ -295,33 +295,36 @@ export function SettingsPage() {
           >
             {autoSyncEnabled ? '关闭自动同步' : '开启自动同步'}
           </button>
-
-          <label className="cloud-sync-interval-control">
-            <span>同步间隔</span>
-            <select
-              aria-label="自动同步间隔"
-              value={String(autoSyncIntervalMinutes)}
-              onChange={handleAutoSyncIntervalChange}
-              disabled={!cloudUser}
-            >
-              {AUTO_SYNC_INTERVAL_OPTIONS.map((minutes) => (
-                <option key={minutes} value={minutes}>
-                  {minutes} 分钟
-                </option>
-              ))}
-            </select>
-          </label>
         </div>
 
-        <p className="muted">登录账号：{cloudUser ? cloudAccountName : '未登录'}</p>
-        <p className="muted">
-          自动同步：{autoSyncEnabled ? `已开启（前台在线状态每 ${autoSyncIntervalMinutes} 分钟同步）` : '未开启'}
-        </p>
-        <p className="muted">最近同步时间：{cloudLastSyncedAt ? formatDateTime(cloudLastSyncedAt) : '暂无'}</p>
-        <p className="muted">
-          云端最近更新时间：{cloudLastCloudUpdatedAt ? formatDateTime(cloudLastCloudUpdatedAt) : '暂无'}
-        </p>
-        {cloudLastError ? <p className="error-text">{cloudLastError}</p> : null}
+        <div className="cloud-status-stack">
+          <div className="cloud-account-row">
+            <p className="muted">登录账号：{cloudUser ? cloudAccountName : '未登录'}</p>
+            <label className="cloud-sync-inline-setting">
+              <span>同步间隔</span>
+              <select
+                aria-label="自动同步间隔"
+                value={String(autoSyncIntervalMinutes)}
+                onChange={handleAutoSyncIntervalChange}
+                disabled={!cloudUser}
+              >
+                {AUTO_SYNC_INTERVAL_OPTIONS.map((minutes) => (
+                  <option key={minutes} value={minutes}>
+                    {minutes} 分钟
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <p className="muted">
+            自动同步：{autoSyncEnabled ? `已开启（前台在线状态每 ${autoSyncIntervalMinutes} 分钟同步）` : '未开启'}
+          </p>
+          <p className="muted">最近同步时间：{cloudLastSyncedAt ? formatDateTime(cloudLastSyncedAt) : '暂无'}</p>
+          <p className="muted">
+            云端最近更新时间：{cloudLastCloudUpdatedAt ? formatDateTime(cloudLastCloudUpdatedAt) : '暂无'}
+          </p>
+          {cloudLastError ? <p className="error-text">{cloudLastError}</p> : null}
+        </div>
       </article>
 
       <article className="card">

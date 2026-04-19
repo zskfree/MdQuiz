@@ -540,30 +540,47 @@ select {
   align-items: flex-start;
 }
 
-.cloud-sync-interval-control {
+.cloud-status-stack {
+  margin-top: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.cloud-status-stack .muted,
+.cloud-status-stack .error-text {
+  margin: 0;
+  line-height: 1.45;
+}
+
+.cloud-account-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.cloud-account-row .muted {
+  margin: 0;
+}
+
+.cloud-sync-inline-setting {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  height: 50px;
-  padding: 0 14px;
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  background: var(--panel-strong);
-  box-sizing: border-box;
+  color: var(--muted);
 }
 
-.cloud-sync-interval-control span {
-  color: var(--muted);
+.cloud-sync-inline-setting span {
   white-space: nowrap;
   font-size: 0.9rem;
 }
 
-.cloud-sync-interval-control select {
-  border: 0;
-  background: transparent;
-  padding: 0;
-  min-height: 0;
-  line-height: 1.2;
+.cloud-sync-inline-setting select {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  padding: 6px 10px;
+  min-height: 34px;
 }
 
 .compact-row {
@@ -859,7 +876,6 @@ select {
 
   .cloud-sync-actions .action-button,
   .cloud-sync-actions .secondary-button,
-  .cloud-sync-actions .cloud-sync-interval-control,
   .backup-actions .action-button,
   .backup-actions .secondary-button,
   .backup-actions .file-button {
@@ -868,10 +884,18 @@ select {
     justify-content: center;
   }
 
-  .cloud-sync-actions .cloud-sync-interval-control,
   .backup-actions .secondary-button:last-child {
     grid-column: 1 / -1;
     min-width: 0;
+  }
+
+  .cloud-account-row {
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .cloud-status-stack {
+    gap: 8px;
   }
 
   .practice-topbar,
