@@ -66,6 +66,12 @@ export async function putValues<T>(storeName: StoreName, values: T[]): Promise<v
   })
 }
 
+export async function deleteValue(storeName: StoreName, key: IDBValidKey): Promise<void> {
+  await withStore(storeName, 'readwrite', async (store) => {
+    await requestToPromise(store.delete(key))
+  })
+}
+
 export async function deleteValuesByIndex(
   storeName: StoreName,
   indexName: string,

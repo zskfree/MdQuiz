@@ -1,6 +1,6 @@
 import type { DiagnosticIssue, LibraryManifest, Question } from '../../../types'
 import { STORE_NAMES } from '../../../types'
-import { getAllValues, putValue, putValues } from './common'
+import { deleteValue, deleteValuesByIndex, getAllValues, putValue, putValues } from './common'
 
 export async function loadStoredLibraries(): Promise<LibraryManifest[]> {
   return getAllValues<LibraryManifest>(STORE_NAMES.libraries)
@@ -32,4 +32,11 @@ export async function saveLibraryBackup(
   await putValues(STORE_NAMES.libraries, libraries)
   await putValues(STORE_NAMES.questions, questions)
   await putValues(STORE_NAMES.diagnostics, diagnostics)
+}
+
+export async function deleteLibraryBundle(libraryId: string): Promise<void> {
+  await deleteValue(STORE_NAMES.libraries, libraryId)
+  await deleteValuesByIndex(STORE_NAMES.questions, 'libraryId', libraryId)
+  await deleteValuesByIndex(STORE_NAMES.diagnostics, 'libraryId', libraryId)
+  await deleteValuesByIndex(STORE_NAMES.imports, 'libraryId', libraryId)
 }

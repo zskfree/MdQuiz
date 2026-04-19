@@ -34,6 +34,13 @@ type CreateBackupPayloadInput = {
   examResults: ExamResult[]
 }
 
+type CreateLibraryBackupPayloadInput = {
+  activeLibraryId?: string
+  library: LibraryManifest
+  questions: Question[]
+  diagnostics: DiagnosticIssue[]
+}
+
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
 }
@@ -55,6 +62,24 @@ export function createBackupPayload(input: CreateBackupPayloadInput): BackupPayl
       examResults: input.examResults,
     },
   }
+}
+
+function sanitizeFilenameSegment(value: string): string {
+  const normalized = value.trim().replace(/[<>:"/\\|?*\u0000-\u001f]+/g, '-')
+  const collapsed = normalized.replace(/\s+/g, ' ').replace(/-+/g, '-').trim()
+  return collapsed.length > 0 ? collapsed : 'library'
+}
+
+export function createLibraryBackupPayload(input: CreateLibraryBackupPayloadInput): BackupPayload {
+  return createBackupPayload({
+    activeLibraryId: input.activeLibraryId ?? input.library.id,
+    libraries: [input.library],
+    questions: input.questions,
+    diagnostics: input.diagnostics,
+    memoryRecords: [],
+    sessions: [],
+    examResults: [],
+  })
 }
 
 export function parseBackupPayload(raw: string): BackupPayload {
@@ -89,4 +114,9 @@ export function parseBackupPayload(raw: string): BackupPayload {
 export function createBackupFilename(timestamp = Date.now()): string {
   const iso = new Date(timestamp).toISOString().replace(/[:.]/g, '-')
   return `mdquiz-backup-${iso}.json`
+}
+
+export function createLibraryBackupFilename(libraryName: string, timestamp = Date.now()): string {
+  const iso = new Date(timestamp).toISOString().replace(/[:.]/g, '-')
+  return `mdquiz-library-${sanitizeFilenameSegment(libraryName)}-${iso}.json`
 }

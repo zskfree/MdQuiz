@@ -1,6 +1,7 @@
-import { create } from 'zustand'
+﻿import { create } from 'zustand'
 import { importMarkdownFiles } from '../core/import-export'
 import {
+  deleteLibraryBundle,
   loadStoredDiagnostics,
   loadStoredLibraries,
   loadStoredQuestions,
@@ -10,7 +11,7 @@ import {
 import type { DiagnosticIssue, LibraryManifest, Question } from '../types'
 
 type BuiltinLibraryPayload = {
-  manifest: LibraryManifest
+  manifests: LibraryManifest[]
   questions: Question[]
   diagnostics: DiagnosticIssue[]
 }
@@ -33,12 +34,17 @@ type LibraryStoreState = {
     diagnostics: DiagnosticIssue[]
     activeLibraryId?: string
   }) => Promise<void>
+  deleteLibrary: (libraryId: string) => Promise<void>
   getAllLibraries: () => LibraryManifest[]
   getActiveLibrary: () => LibraryManifest | undefined
+  getQuestionsForLibrary: (libraryId: string) => Question[]
   getQuestionsForActiveLibrary: () => Question[]
   getQuestionById: (questionId: string) => Question | undefined
+  getDiagnosticsForLibrary: (libraryId: string) => DiagnosticIssue[]
   getDiagnosticsForActiveLibrary: () => DiagnosticIssue[]
 }
+
+type LibrarySnapshot = Pick<LibraryStoreState, 'libraries' | 'questions' | 'diagnostics' | 'activeLibraryId'>
 
 function resolveVisibleError(error: unknown, fallbackMessage: string): string {
   if (error instanceof Error && /[\u4e00-\u9fa5]/.test(error.message)) {
@@ -48,31 +54,95 @@ function resolveVisibleError(error: unknown, fallbackMessage: string): string {
   return fallbackMessage
 }
 
-async function fetchBuiltinLibrary(): Promise<BuiltinLibraryPayload> {
+async function fetchBuiltinLibraries(): Promise<BuiltinLibraryPayload> {
   const builtinLibraryBaseUrl = new URL('builtin-library/', window.location.origin + import.meta.env.BASE_URL)
-  const [manifestResponse, questionsResponse, diagnosticsResponse] = await Promise.all([
-    fetch(new URL('manifest.json', builtinLibraryBaseUrl)),
+  const [librariesResponse, questionsResponse, diagnosticsResponse] = await Promise.all([
+    fetch(new URL('libraries.json', builtinLibraryBaseUrl)),
     fetch(new URL('questions.json', builtinLibraryBaseUrl)),
     fetch(new URL('diagnostics.json', builtinLibraryBaseUrl)),
   ])
 
-  if (!manifestResponse.ok) {
-    throw new Error(`加载内置题库清单失败：${manifestResponse.status}`)
+  if (!librariesResponse.ok) {
+    throw new Error(`加载默认题库清单失败：${librariesResponse.status}`)
   }
 
   if (!questionsResponse.ok) {
-    throw new Error(`加载内置题目数据失败：${questionsResponse.status}`)
+    throw new Error(`加载默认题目数据失败：${questionsResponse.status}`)
   }
 
   if (!diagnosticsResponse.ok) {
-    throw new Error(`加载内置诊断数据失败：${diagnosticsResponse.status}`)
+    throw new Error(`加载默认题库诊断失败：${diagnosticsResponse.status}`)
   }
 
-  const manifest = (await manifestResponse.json()) as LibraryManifest
+  const manifests = (await librariesResponse.json()) as LibraryManifest[]
   const questions = (await questionsResponse.json()) as Question[]
   const diagnostics = (await diagnosticsResponse.json()) as DiagnosticIssue[]
 
-  return { manifest, questions, diagnostics }
+  return { manifests, questions, diagnostics }
+}
+
+function buildLibraryMap(libraries: LibraryManifest[]): Record<string, LibraryManifest> {
+  return Object.fromEntries(libraries.map((library) => [library.id, library]))
+}
+
+function buildQuestionMap(questions: Question[]): Record<string, Question> {
+  return Object.fromEntries(questions.map((question) => [question.id, question]))
+}
+
+function buildDiagnosticsMap(diagnostics: DiagnosticIssue[]): Record<string, DiagnosticIssue[]> {
+  return diagnostics.reduce<Record<string, DiagnosticIssue[]>>((acc, item) => {
+    acc[item.libraryId] ??= []
+    acc[item.libraryId].push(item)
+    return acc
+  }, {})
+}
+
+function sortLibraries(libraries: LibraryManifest[]): LibraryManifest[] {
+  return [...libraries].sort((left, right) => right.updatedAt - left.updatedAt)
+}
+
+function pickNextActiveLibraryId(libraries: Record<string, LibraryManifest>): string | undefined {
+  return sortLibraries(Object.values(libraries))[0]?.id
+}
+
+function removeLibrariesFromState(state: LibrarySnapshot, libraryIds: Iterable<string>): LibrarySnapshot {
+  const libraryIdSet = new Set(libraryIds)
+
+  if (libraryIdSet.size === 0) {
+    return state
+  }
+
+  return {
+    libraries: Object.fromEntries(
+      Object.entries(state.libraries).filter(([libraryId]) => !libraryIdSet.has(libraryId)),
+    ),
+    questions: Object.fromEntries(
+      Object.entries(state.questions).filter(([, question]) => !libraryIdSet.has(question.libraryId)),
+    ),
+    diagnostics: Object.fromEntries(
+      Object.entries(state.diagnostics).filter(([libraryId]) => !libraryIdSet.has(libraryId)),
+    ),
+    activeLibraryId: libraryIdSet.has(state.activeLibraryId ?? '') ? undefined : state.activeLibraryId,
+  }
+}
+
+async function clearLibraryRecords(libraryId: string): Promise<void> {
+  const [{ useReviewStore }, { useSessionStore }, { useExamStore }] = await Promise.all([
+    import('./reviewStore'),
+    import('./sessionStore'),
+    import('./examStore'),
+  ])
+
+  await Promise.all([
+    useReviewStore.getState().clearRecordsForLibrary(libraryId),
+    useSessionStore.getState().clearSessionsForLibrary(libraryId),
+    useExamStore.getState().clearResultsForLibrary(libraryId),
+  ])
+}
+
+async function purgeLibraryData(libraryId: string): Promise<void> {
+  await deleteLibraryBundle(libraryId)
+  await clearLibraryRecords(libraryId)
 }
 
 export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
@@ -98,30 +168,21 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
         loadStoredDiagnostics(),
       ])
 
-      if (libraries.length > 0) {
-        const libraryMap = Object.fromEntries(libraries.map((library) => [library.id, library]))
-        const questionMap = Object.fromEntries(questions.map((question) => [question.id, question]))
-        const diagnosticsMap = diagnostics.reduce<Record<string, DiagnosticIssue[]>>((acc, item) => {
-          acc[item.libraryId] ??= []
-          acc[item.libraryId].push(item)
-          return acc
-        }, {})
-        const firstLibrary = libraries[0]
+      const libraryMap = buildLibraryMap(libraries)
+      const questionMap = buildQuestionMap(questions)
+      const diagnosticsMap = buildDiagnosticsMap(diagnostics)
+      const firstLibrary = sortLibraries(libraries)[0]
 
-        set({
-          libraries: libraryMap,
-          questions: questionMap,
-          diagnostics: diagnosticsMap,
-          activeLibraryId: firstLibrary?.id,
-          isLoading: false,
-          initialized: true,
-          error: undefined,
-        })
-        void get().loadBuiltinLibrary()
-        return
-      }
+      set({
+        libraries: libraryMap,
+        questions: questionMap,
+        diagnostics: diagnosticsMap,
+        activeLibraryId: firstLibrary?.id,
+        isLoading: false,
+        initialized: true,
+        error: undefined,
+      })
 
-      set({ initialized: true, isLoading: false })
       await get().loadBuiltinLibrary()
     } catch (error) {
       set({
@@ -136,27 +197,41 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
     set({ isLoading: true, error: undefined })
 
     try {
-      const { manifest, questions, diagnostics } = await fetchBuiltinLibrary()
-      const questionMap = Object.fromEntries(questions.map((question) => [question.id, question]))
-      await saveLibraryBundle(manifest, questions, diagnostics)
-      const currentActiveLibraryId = get().activeLibraryId
-      const shouldActivateBuiltin =
-        !currentActiveLibraryId || currentActiveLibraryId === manifest.id || !get().libraries[currentActiveLibraryId]
+      const { manifests, questions, diagnostics } = await fetchBuiltinLibraries()
+      const currentBuiltinIds = Object.values(get().libraries)
+        .filter((library) => library.sourceType === 'builtin')
+        .map((library) => library.id)
+      const fetchedBuiltinIds = new Set(manifests.map((manifest) => manifest.id))
+      const staleBuiltinIds = currentBuiltinIds.filter((libraryId) => !fetchedBuiltinIds.has(libraryId))
+      const replaceBuiltinIds = currentBuiltinIds.filter((libraryId) => fetchedBuiltinIds.has(libraryId))
+
+      await Promise.all(staleBuiltinIds.map((libraryId) => purgeLibraryData(libraryId)))
+      await Promise.all(replaceBuiltinIds.map((libraryId) => deleteLibraryBundle(libraryId)))
+      await saveLibraryBackup(manifests, questions, diagnostics)
+
+      const stateWithoutBuiltin = removeLibrariesFromState(get(), currentBuiltinIds)
+      const nextLibraries = {
+        ...stateWithoutBuiltin.libraries,
+        ...buildLibraryMap(manifests),
+      }
+      const nextQuestions = {
+        ...stateWithoutBuiltin.questions,
+        ...buildQuestionMap(questions),
+      }
+      const nextDiagnostics = {
+        ...stateWithoutBuiltin.diagnostics,
+        ...buildDiagnosticsMap(diagnostics),
+      }
+      const nextActiveLibraryId =
+        stateWithoutBuiltin.activeLibraryId && nextLibraries[stateWithoutBuiltin.activeLibraryId]
+          ? stateWithoutBuiltin.activeLibraryId
+          : pickNextActiveLibraryId(nextLibraries)
 
       set({
-        libraries: {
-          ...get().libraries,
-          [manifest.id]: manifest,
-        },
-        questions: {
-          ...get().questions,
-          ...questionMap,
-        },
-        diagnostics: {
-          ...get().diagnostics,
-          [manifest.id]: diagnostics,
-        },
-        activeLibraryId: shouldActivateBuiltin ? manifest.id : currentActiveLibraryId,
+        libraries: nextLibraries,
+        questions: nextQuestions,
+        diagnostics: nextDiagnostics,
+        activeLibraryId: nextActiveLibraryId,
         isLoading: false,
         initialized: true,
         error: undefined,
@@ -165,7 +240,7 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
       set({
         isLoading: false,
         initialized: true,
-        error: resolveVisibleError(error, '加载内置题库失败。'),
+        error: resolveVisibleError(error, '加载默认题库失败。'),
       })
     }
   },
@@ -175,9 +250,7 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
       return
     }
 
-    set({
-      activeLibraryId: libraryId,
-    })
+    set({ activeLibraryId: libraryId })
   },
 
   importFiles: async (files) => {
@@ -191,23 +264,23 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
       const bundle = await importMarkdownFiles(files)
       await saveLibraryBundle(bundle.manifest, bundle.questions, bundle.diagnostics)
 
-      set({
+      set((state) => ({
         libraries: {
-          ...get().libraries,
+          ...state.libraries,
           [bundle.manifest.id]: bundle.manifest,
         },
         questions: {
-          ...get().questions,
-          ...Object.fromEntries(bundle.questions.map((question) => [question.id, question])),
+          ...state.questions,
+          ...buildQuestionMap(bundle.questions),
         },
         diagnostics: {
-          ...get().diagnostics,
+          ...state.diagnostics,
           [bundle.manifest.id]: bundle.diagnostics,
         },
         activeLibraryId: bundle.manifest.id,
         isLoading: false,
         error: undefined,
-      })
+      }))
     } catch (error) {
       set({
         isLoading: false,
@@ -219,61 +292,105 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
   restoreBackup: async (input) => {
     await saveLibraryBackup(input.libraries, input.questions, input.diagnostics)
 
-    const libraryMap = {
-      ...get().libraries,
-      ...Object.fromEntries(input.libraries.map((library) => [library.id, library])),
-    }
-    const questionMap = {
-      ...get().questions,
-      ...Object.fromEntries(input.questions.map((question) => [question.id, question])),
-    }
-    const diagnosticsMap = { ...get().diagnostics }
+    set((state) => {
+      const mergedLibraries = {
+        ...state.libraries,
+        ...buildLibraryMap(input.libraries),
+      }
+      const mergedQuestions = {
+        ...state.questions,
+        ...buildQuestionMap(input.questions),
+      }
+      const mergedDiagnostics = {
+        ...state.diagnostics,
+        ...buildDiagnosticsMap(input.diagnostics),
+      }
+      const requestedActiveLibraryId = input.activeLibraryId
 
-    for (const diagnostic of input.diagnostics) {
-      diagnosticsMap[diagnostic.libraryId] = [
-        ...(diagnosticsMap[diagnostic.libraryId] ?? []).filter((item) => item.id !== diagnostic.id),
-        diagnostic,
-      ]
-    }
-
-    set({
-      libraries: libraryMap,
-      questions: questionMap,
-      diagnostics: diagnosticsMap,
-      activeLibraryId:
-        input.activeLibraryId && libraryMap[input.activeLibraryId]
-          ? input.activeLibraryId
-          : get().activeLibraryId ?? input.libraries[0]?.id,
-      isLoading: false,
-      error: undefined,
+      return {
+        libraries: mergedLibraries,
+        questions: mergedQuestions,
+        diagnostics: mergedDiagnostics,
+        activeLibraryId:
+          requestedActiveLibraryId && mergedLibraries[requestedActiveLibraryId]
+            ? requestedActiveLibraryId
+            : state.activeLibraryId && mergedLibraries[state.activeLibraryId]
+              ? state.activeLibraryId
+              : pickNextActiveLibraryId(mergedLibraries),
+        isLoading: false,
+        error: undefined,
+      }
     })
   },
 
-  getAllLibraries: () =>
-    Object.values(get().libraries).sort((left, right) => right.updatedAt - left.updatedAt),
+  deleteLibrary: async (libraryId) => {
+    const library = get().libraries[libraryId]
+
+    if (!library) {
+      return
+    }
+
+    if (library.sourceType === 'builtin') {
+      throw new Error('默认题库不支持删除。')
+    }
+
+    set({ isLoading: true, error: undefined })
+
+    try {
+      await purgeLibraryData(libraryId)
+
+      set((state) => {
+        const nextState = removeLibrariesFromState(state, [libraryId])
+        return {
+          ...nextState,
+          activeLibraryId:
+            nextState.activeLibraryId && nextState.libraries[nextState.activeLibraryId]
+              ? nextState.activeLibraryId
+              : pickNextActiveLibraryId(nextState.libraries),
+          isLoading: false,
+          error: undefined,
+        }
+      })
+    } catch (error) {
+      set({
+        isLoading: false,
+        error: resolveVisibleError(error, '删除题库失败。'),
+      })
+      throw error
+    }
+  },
+
+  getAllLibraries: () => sortLibraries(Object.values(get().libraries)),
 
   getActiveLibrary: () => {
     const state = get()
     return state.activeLibraryId ? state.libraries[state.activeLibraryId] : undefined
   },
 
-  getQuestionsForActiveLibrary: () => {
+  getQuestionsForLibrary: (libraryId) => {
     const state = get()
-    const activeLibrary = state.activeLibraryId ? state.libraries[state.activeLibraryId] : undefined
+    const library = state.libraries[libraryId]
 
-    if (!activeLibrary) {
+    if (!library) {
       return []
     }
 
-    return activeLibrary.questionIds
+    return library.questionIds
       .map((questionId) => state.questions[questionId])
       .filter((question): question is Question => Boolean(question))
   },
 
+  getQuestionsForActiveLibrary: () => {
+    const activeLibraryId = get().activeLibraryId
+    return activeLibraryId ? get().getQuestionsForLibrary(activeLibraryId) : []
+  },
+
   getQuestionById: (questionId) => get().questions[questionId],
 
+  getDiagnosticsForLibrary: (libraryId) => get().diagnostics[libraryId] ?? [],
+
   getDiagnosticsForActiveLibrary: () => {
-    const state = get()
-    return state.activeLibraryId ? state.diagnostics[state.activeLibraryId] ?? [] : []
+    const activeLibraryId = get().activeLibraryId
+    return activeLibraryId ? get().getDiagnosticsForLibrary(activeLibraryId) : []
   },
 }))
