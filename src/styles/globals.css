@@ -890,8 +890,21 @@ select {
   }
 
   .cloud-account-row {
-    align-items: flex-start;
-    gap: 10px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 10px;
+    row-gap: 8px;
+    width: 100%;
+  }
+
+  .cloud-account-row .muted {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .cloud-sync-inline-setting {
+    justify-self: end;
   }
 
   .cloud-status-stack {
@@ -1171,6 +1184,15 @@ select {
 
   .mobile-topbar-title {
     font-size: 0.96rem;
+  }
+
+  .cloud-account-row {
+    grid-template-columns: 1fr;
+    row-gap: 6px;
+  }
+
+  .cloud-sync-inline-setting {
+    justify-self: start;
   }
 
   .cloud-sync-actions,
