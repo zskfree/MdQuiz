@@ -21,7 +21,7 @@ function resolveProductionBase(): string {
   const repository = readEnv('GITHUB_REPOSITORY')?.split('/')[1]
 
   if (!repository) {
-    return '/MdQuiz/'
+    return '/'
   }
 
   if (repository.toLowerCase().slice(-10) === '.github.io') {

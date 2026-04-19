@@ -24,6 +24,11 @@ export function AppShell() {
   })?.label
 
   useEffect(() => {
+    if (typeof window.matchMedia !== 'function') {
+      setIsMobile(false)
+      return
+    }
+
     const mediaQuery = window.matchMedia('(max-width: 900px)')
 
     const sync = () => {
@@ -36,10 +41,19 @@ export function AppShell() {
     }
 
     sync()
-    mediaQuery.addEventListener('change', sync)
+
+    if (typeof mediaQuery.addEventListener === 'function') {
+      mediaQuery.addEventListener('change', sync)
+    } else if (typeof mediaQuery.addListener === 'function') {
+      mediaQuery.addListener(sync)
+    }
 
     return () => {
-      mediaQuery.removeEventListener('change', sync)
+      if (typeof mediaQuery.removeEventListener === 'function') {
+        mediaQuery.removeEventListener('change', sync)
+      } else if (typeof mediaQuery.removeListener === 'function') {
+        mediaQuery.removeListener(sync)
+      }
     }
   }, [])
 
