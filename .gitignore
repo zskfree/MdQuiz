@@ -1,0 +1,13 @@
+node_modules/
+dist/
+
+assets/
+builtin-library/
+
+libraries/
+
+*.tsbuildinfo
+vite.config.js
+vite.config.d.ts
+vite.stdout.log
+vite.stderr.log

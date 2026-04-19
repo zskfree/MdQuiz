@@ -7,10 +7,10 @@
     "build:library": "node ./scripts/build-library.mjs",
     "build:site": "node ./scripts/build-site.mjs",
     "build:preview": "node ./scripts/build-preview.mjs",
-    "sync:static-root": "node ./scripts/sync-static-root.mjs",
+    "typecheck": "tsc --noEmit -p tsconfig.app.json && tsc --noEmit -p tsconfig.node.json",
     "dev": "npm run build:library && vite --config vite.config.ts",
-    "build": "npm run build:library && tsc -b && npm run build:site && npm run sync:static-root",
-    "preview": "npm run build:library && tsc -b && npm run build:preview && vite preview --config vite.config.ts",
+    "build": "npm run build:library && npm run typecheck && npm run build:site",
+    "preview": "npm run build:library && npm run typecheck && npm run build:preview && vite preview --config vite.config.ts",
     "test": "vitest run"
   },
   "dependencies": {
