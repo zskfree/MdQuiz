@@ -1,0 +1,17 @@
+{
+  "id": "builtin-default",
+  "name": "Builtin Library",
+  "sourceType": "builtin",
+  "version": "2026-04-18T19:18:53.102Z",
+  "questionIds": [
+    "js-001",
+    "logic-001"
+  ],
+  "questionCount": 2,
+  "scorableCount": 2,
+  "createdAt": 1776539933102,
+  "updatedAt": 1776539933102,
+  "meta": {
+    "diagnosticsCount": 0
+  }
+}

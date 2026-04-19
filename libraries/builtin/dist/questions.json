@@ -1,0 +1,74 @@
+[
+  {
+    "id": "js-001",
+    "libraryId": "builtin-default",
+    "sourcePath": "questions/js-001.md",
+    "title": "变量提升",
+    "type": "single",
+    "body": "# 以下哪个说法正确？",
+    "options": [
+      {
+        "key": "A",
+        "label": "let 会提升并且可在声明前直接访问"
+      },
+      {
+        "key": "B",
+        "label": "var 会提升声明"
+      },
+      {
+        "key": "C",
+        "label": "const 可以重复声明"
+      },
+      {
+        "key": "D",
+        "label": "function 不会提升"
+      }
+    ],
+    "answer": [
+      "B"
+    ],
+    "explanation": "var 会提升声明，但不会提升赋值。",
+    "tags": [
+      "JavaScript",
+      "基础"
+    ],
+    "difficulty": 2,
+    "scorable": true,
+    "assets": [],
+    "diagnostics": [],
+    "createdAt": 1776539933107,
+    "updatedAt": 1776539933107
+  },
+  {
+    "id": "logic-001",
+    "libraryId": "builtin-default",
+    "sourcePath": "questions/logic-001.md",
+    "title": "“真命题”指的是在给定语境下成立的命题。",
+    "type": "boolean",
+    "body": "# “真命题”指的是在给定语境下成立的命题。",
+    "options": [
+      {
+        "key": "TRUE",
+        "label": "正确"
+      },
+      {
+        "key": "FALSE",
+        "label": "错误"
+      }
+    ],
+    "answer": [
+      "TRUE"
+    ],
+    "explanation": "若一个命题对所有情况都成立，则它为真命题。",
+    "tags": [
+      "逻辑",
+      "判断"
+    ],
+    "difficulty": 3,
+    "scorable": true,
+    "assets": [],
+    "diagnostics": [],
+    "createdAt": 1776539933108,
+    "updatedAt": 1776539933108
+  }
+]
