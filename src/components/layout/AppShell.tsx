@@ -78,11 +78,10 @@ export function AppShell() {
       <aside className={sidebarClassName}>
         <div className="sidebar-head">
           <div className="brand">
-            <span className="brand-mark">题</span>
+            <span className="brand-mark">刷题</span>
             {sidebarExpanded || isMobile ? (
               <div>
                 <div className="brand-title">题库练习</div>
-                <div className="brand-subtitle">本地优先刷题应用</div>
               </div>
             ) : null}
           </div>
