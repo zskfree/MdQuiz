@@ -21,17 +21,22 @@ function withSuspense(element: JSX.Element) {
   return <Suspense fallback={<div className="page-loading">页面加载中...</div>}>{element}</Suspense>
 }
 
-export const router = createBrowserRouter([
+export const router = createBrowserRouter(
+  [
+    {
+      path: '/',
+      element: <AppShell />,
+      children: [
+        { index: true, element: withSuspense(<HomePage />) },
+        { path: 'libraries', element: withSuspense(<LibraryPage />) },
+        { path: 'practice', element: withSuspense(<PracticePage />) },
+        { path: 'exam', element: withSuspense(<ExamPage />) },
+        { path: 'diagnostics', element: withSuspense(<DiagnosticsPage />) },
+        { path: 'settings', element: withSuspense(<SettingsPage />) },
+      ],
+    },
+  ],
   {
-    path: '/',
-    element: <AppShell />,
-    children: [
-      { index: true, element: withSuspense(<HomePage />) },
-      { path: 'libraries', element: withSuspense(<LibraryPage />) },
-      { path: 'practice', element: withSuspense(<PracticePage />) },
-      { path: 'exam', element: withSuspense(<ExamPage />) },
-      { path: 'diagnostics', element: withSuspense(<DiagnosticsPage />) },
-      { path: 'settings', element: withSuspense(<SettingsPage />) },
-    ],
+    basename: import.meta.env.BASE_URL,
   },
-])
+)
