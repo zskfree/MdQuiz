@@ -101,7 +101,7 @@ export function HomePage() {
   return (
     <section className="page">
       <header className="page-header">
-        <p className="eyebrow">Today</p>
+        <p className="eyebrow">今日</p>
         <h1>复习看板</h1>
       </header>
 
@@ -206,7 +206,7 @@ export function HomePage() {
               {levelEntries.map((entry) => (
                 <div className="level-row" key={entry.level}>
                   <span className="level-label" style={{ color: entry.color }}>
-                    L{entry.level}
+                    第{entry.level}级
                   </span>
                   <div className="level-bar-track">
                     <span
@@ -219,7 +219,7 @@ export function HomePage() {
               ))}
             </div>
           </div>
-          <p className="muted">覆盖记忆等级 L1-L7，便于观察记忆结构。</p>
+          <p className="muted">覆盖记忆等级第 1 级到第 7 级，便于观察记忆结构。</p>
         </article>
       </div>
     </section>

@@ -1,50 +1,53 @@
 <!doctype html>
 <html lang="zh-CN">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MdQuiz</title>
-    <script>
-      ;(() => {
-        const reloadFlag = 'mdquiz-reload-on-asset-error'
 
-        const reloadOnce = () => {
-          if (sessionStorage.getItem(reloadFlag) === '1') {
-            return
-          }
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>题库练习</title>
+  <script>
+    ; (() => {
+      const reloadFlag = 'mdquiz-reload-on-asset-error'
 
-          sessionStorage.setItem(reloadFlag, '1')
-          window.location.reload()
+      const reloadOnce = () => {
+        if (sessionStorage.getItem(reloadFlag) === '1') {
+          return
         }
 
-        window.addEventListener(
-          'error',
-          (event) => {
-            const target = event.target
+        sessionStorage.setItem(reloadFlag, '1')
+        window.location.reload()
+      }
 
-            if (target instanceof HTMLScriptElement) {
-              reloadOnce()
-            }
-          },
-          true,
-        )
+      window.addEventListener(
+        'error',
+        (event) => {
+          const target = event.target
 
-        window.addEventListener('unhandledrejection', (event) => {
-          const message = String((event.reason && event.reason.message) || event.reason || '')
-
-          if (
-            message.includes('Failed to fetch dynamically imported module') ||
-            message.includes('Importing a module script failed')
-          ) {
+          if (target instanceof HTMLScriptElement) {
             reloadOnce()
           }
-        })
-      })()
-    </script>
-    <script type="module" crossorigin src="/MdQuiz/assets/index-B_FGpXeJ.js"></script>
-    <link rel="stylesheet" crossorigin href="/MdQuiz/assets/index-CVStS7bK.css">
-  </head>
-  <body>
-    <div id="root"></div>
-  </body>
-  </html>
+        },
+        true,
+      )
+
+      window.addEventListener('unhandledrejection', (event) => {
+        const message = String((event.reason && event.reason.message) || event.reason || '')
+
+        if (
+          message.includes('Failed to fetch dynamically imported module') ||
+          message.includes('Importing a module script failed')
+        ) {
+          reloadOnce()
+        }
+      })
+    })()
+  </script>
+  <script type="module" crossorigin src="/MdQuiz/assets/index-BVXaI1a0.js"></script>
+  <link rel="stylesheet" crossorigin href="/MdQuiz/assets/index-CVStS7bK.css">
+</head>
+
+<body>
+  <div id="root"></div>
+</body>
+
+</html>

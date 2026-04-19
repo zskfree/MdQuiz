@@ -40,6 +40,14 @@ type LibraryStoreState = {
   getDiagnosticsForActiveLibrary: () => DiagnosticIssue[]
 }
 
+function resolveVisibleError(error: unknown, fallbackMessage: string): string {
+  if (error instanceof Error && /[\u4e00-\u9fa5]/.test(error.message)) {
+    return error.message
+  }
+
+  return fallbackMessage
+}
+
 async function fetchBuiltinLibrary(): Promise<BuiltinLibraryPayload> {
   const builtinLibraryBaseUrl = new URL('builtin-library/', window.location.origin + import.meta.env.BASE_URL)
   const [manifestResponse, questionsResponse, diagnosticsResponse] = await Promise.all([
@@ -49,15 +57,15 @@ async function fetchBuiltinLibrary(): Promise<BuiltinLibraryPayload> {
   ])
 
   if (!manifestResponse.ok) {
-    throw new Error(`Failed to load builtin manifest: ${manifestResponse.status}`)
+    throw new Error(`加载内置题库清单失败：${manifestResponse.status}`)
   }
 
   if (!questionsResponse.ok) {
-    throw new Error(`Failed to load builtin questions: ${questionsResponse.status}`)
+    throw new Error(`加载内置题目数据失败：${questionsResponse.status}`)
   }
 
   if (!diagnosticsResponse.ok) {
-    throw new Error(`Failed to load builtin diagnostics: ${diagnosticsResponse.status}`)
+    throw new Error(`加载内置诊断数据失败：${diagnosticsResponse.status}`)
   }
 
   const manifest = (await manifestResponse.json()) as LibraryManifest
@@ -119,7 +127,7 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
       set({
         initialized: true,
         isLoading: false,
-        error: error instanceof Error ? error.message : 'Failed to initialize libraries.',
+        error: resolveVisibleError(error, '初始化题库失败。'),
       })
     }
   },
@@ -157,7 +165,7 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
       set({
         isLoading: false,
         initialized: true,
-        error: error instanceof Error ? error.message : 'Failed to load builtin library.',
+        error: resolveVisibleError(error, '加载内置题库失败。'),
       })
     }
   },
@@ -203,7 +211,7 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
     } catch (error) {
       set({
         isLoading: false,
-        error: error instanceof Error ? error.message : 'Failed to import Markdown files.',
+        error: resolveVisibleError(error, '导入题库文件失败。'),
       })
     }
   },

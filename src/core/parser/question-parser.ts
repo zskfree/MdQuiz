@@ -33,7 +33,7 @@ function createTitle(body: string, fallbackId: string): string {
     .find(Boolean)
 
   if (!firstContentLine) {
-    return `Untitled-${fallbackId}`
+    return `未命名题目-${fallbackId}`
   }
 
   return firstContentLine.replace(/^#+\s*/, '')
@@ -236,7 +236,7 @@ export function parseMarkdownQuestion(input: ParseQuestionInput): ParseQuestionR
         libraryId: input.libraryId,
         questionId,
         type: 'missing-id',
-        message: `Question in ${input.sourcePath} is missing an explicit id; generated fallback id ${questionId}.`,
+        message: `文件 ${input.sourcePath} 缺少题目编号，系统已生成回退编号：${questionId}。`,
       }),
     )
   }
@@ -247,7 +247,7 @@ export function parseMarkdownQuestion(input: ParseQuestionInput): ParseQuestionR
         libraryId: input.libraryId,
         questionId,
         type: 'missing-answer',
-        message: `Question ${questionId} has no scorable answer.`,
+        message: `题目 ${questionId} 缺少可判分答案。`,
       }),
     )
   }
@@ -260,7 +260,7 @@ export function parseMarkdownQuestion(input: ParseQuestionInput): ParseQuestionR
         libraryId: input.libraryId,
         questionId,
         type: 'option-answer-mismatch',
-        message: `Question ${questionId} has a declared answer but no options were extracted.`,
+        message: `题目 ${questionId} 已声明答案，但未提取到选项。`,
       }),
     )
   }
@@ -271,7 +271,7 @@ export function parseMarkdownQuestion(input: ParseQuestionInput): ParseQuestionR
         libraryId: input.libraryId,
         questionId,
         type: 'option-answer-mismatch',
-        message: `Question ${questionId} has answers that do not match extracted options.`,
+        message: `题目 ${questionId} 的答案与提取到的选项不匹配。`,
       }),
     )
   }

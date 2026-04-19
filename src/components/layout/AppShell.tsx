@@ -78,11 +78,11 @@ export function AppShell() {
       <aside className={sidebarClassName}>
         <div className="sidebar-head">
           <div className="brand">
-            <span className="brand-mark">MQ</span>
+            <span className="brand-mark">题</span>
             {sidebarExpanded || isMobile ? (
               <div>
-                <div className="brand-title">MdQuiz</div>
-                <div className="brand-subtitle">Local-first Markdown Quiz</div>
+                <div className="brand-title">题库练习</div>
+                <div className="brand-subtitle">本地优先刷题应用</div>
               </div>
             ) : null}
           </div>
@@ -108,7 +108,7 @@ export function AppShell() {
           )}
         </div>
 
-        <nav className="nav-list" aria-label="Primary">
+        <nav className="nav-list" aria-label="主导航">
           {navItems.map((item) => (
             <NavLink
               key={item.to}
@@ -136,7 +136,7 @@ export function AppShell() {
               >
                 菜单
               </button>
-              <div className="mobile-topbar-title">{currentPageLabel ?? 'MdQuiz'}</div>
+              <div className="mobile-topbar-title">{currentPageLabel ?? '题库练习'}</div>
             </div>
           </div>
         ) : null}

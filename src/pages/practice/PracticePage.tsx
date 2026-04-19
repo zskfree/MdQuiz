@@ -49,6 +49,40 @@ function getOptionClassName(input: {
   return classNames.join(' ')
 }
 
+function localizeAnswerToken(token: string): string {
+  const uppercaseToken = token.toUpperCase()
+  const optionKeyMap: Record<string, string> = {
+    A: '甲',
+    B: '乙',
+    C: '丙',
+    D: '丁',
+    E: '戊',
+    F: '己',
+    G: '庚',
+    H: '辛',
+    I: '壬',
+    J: '癸',
+  }
+
+  if (optionKeyMap[uppercaseToken]) {
+    return optionKeyMap[uppercaseToken]
+  }
+
+  if (uppercaseToken === 'TRUE') {
+    return '正确'
+  }
+
+  if (uppercaseToken === 'FALSE') {
+    return '错误'
+  }
+
+  return token
+}
+
+function localizeAnswerList(answers: string[]): string {
+  return answers.map(localizeAnswerToken).join(', ')
+}
+
 export function PracticePage() {
   const [showNavCard, setShowNavCard] = useState(false)
   const loadBuiltinLibrary = useLibraryStore((state) => state.loadBuiltinLibrary)
@@ -280,7 +314,7 @@ export function PracticePage() {
     return (
       <section className="page">
         <header className="page-header">
-          <p className="eyebrow">Session</p>
+          <p className="eyebrow">练习会话</p>
           <h1>练习</h1>
         </header>
 
@@ -320,7 +354,7 @@ export function PracticePage() {
     <section className={quickMode ? 'page practice-page quick-mode' : 'page practice-page'}>
       {!quickMode ? (
         <header className="page-header">
-          <p className="eyebrow">Session</p>
+          <p className="eyebrow">练习会话</p>
           <h1>练习</h1>
         </header>
       ) : null}
@@ -332,7 +366,7 @@ export function PracticePage() {
               <span>
                 第 {currentSession.currentIndex + 1} / {currentSession.questionIds.length} 题
               </span>
-              {!quickMode && memoryRecord ? <span className="muted">记忆等级：L{memoryRecord.level}</span> : null}
+              {!quickMode && memoryRecord ? <span className="muted">记忆等级：第 {memoryRecord.level} 级</span> : null}
             </div>
 
             {quickMode ? (
@@ -380,7 +414,7 @@ export function PracticePage() {
                   onClick={() => handleOptionSelect(currentQuestion.id, option.key)}
                   disabled={resolvedAnswer.submitted && quickMode}
                 >
-                  <strong>{option.key}</strong>
+                  <strong>{localizeAnswerToken(option.key)}</strong>
                   <span>{option.label}</span>
                 </button>
               )
@@ -480,8 +514,8 @@ export function PracticePage() {
           {!quickMode && feedback && feedback.questionId === currentQuestion.id ? (
             <div className={feedback.isCorrect ? 'feedback success' : 'feedback error'}>
               <p>{feedback.isCorrect ? '回答正确' : '回答错误'}</p>
-              <p>你的答案：{feedback.selected.join(', ') || '未选择'}</p>
-              <p>正确答案：{feedback.expected.join(', ') || '无'}</p>
+              <p>你的答案：{localizeAnswerList(feedback.selected) || '未选择'}</p>
+              <p>正确答案：{localizeAnswerList(feedback.expected) || '无'}</p>
               {resolvedAnswer.revealedExplanation && currentQuestion.explanation ? (
                 <div>
                   <p>解析：</p>
@@ -489,7 +523,7 @@ export function PracticePage() {
                 </div>
               ) : null}
               <p className="muted">
-                快捷键：A/B/C/D 或 1/2/3/4 选择选项，Enter 提交或下一题，Space 展开解析，左右方向键切题，M 标记回看
+                快捷键：可用字母键或数字键选择选项，回车提交或下一题，空格展开解析，左右方向键切题，按标记快捷键可标记回看
               </p>
             </div>
           ) : null}

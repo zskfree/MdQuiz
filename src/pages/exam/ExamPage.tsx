@@ -36,6 +36,40 @@ function getExamNavState(input: { current: boolean; answered: boolean; marked: b
   return 'nav-chip'
 }
 
+function localizeAnswerToken(token: string): string {
+  const uppercaseToken = token.toUpperCase()
+  const optionKeyMap: Record<string, string> = {
+    A: '甲',
+    B: '乙',
+    C: '丙',
+    D: '丁',
+    E: '戊',
+    F: '己',
+    G: '庚',
+    H: '辛',
+    I: '壬',
+    J: '癸',
+  }
+
+  if (optionKeyMap[uppercaseToken]) {
+    return optionKeyMap[uppercaseToken]
+  }
+
+  if (uppercaseToken === 'TRUE') {
+    return '正确'
+  }
+
+  if (uppercaseToken === 'FALSE') {
+    return '错误'
+  }
+
+  return token
+}
+
+function localizeAnswerList(answers: string[]): string {
+  return answers.map(localizeAnswerToken).join(', ')
+}
+
 export function ExamPage() {
   const [questionLimit, setQuestionLimit] = useState(10)
   const [timeLimitMinutes, setTimeLimitMinutes] = useState(20)
@@ -157,7 +191,7 @@ export function ExamPage() {
   return (
     <section className="page">
       <header className="page-header">
-        <p className="eyebrow">Exam</p>
+        <p className="eyebrow">考试</p>
         <h1>模拟考试</h1>
       </header>
 
@@ -237,8 +271,8 @@ export function ExamPage() {
                       </strong>
                       <span>{item.isCorrect ? '正确' : '错误'}</span>
                     </div>
-                    <p>你的答案：{item.selected.join(', ') || '未作答'}</p>
-                    <p>正确答案：{question?.answer.join(', ') ?? '无'}</p>
+                    <p>你的答案：{localizeAnswerList(item.selected) || '未作答'}</p>
+                    <p>正确答案：{question ? localizeAnswerList(question.answer) : '无'}</p>
                   </article>
                 )
               })}
@@ -339,7 +373,7 @@ export function ExamPage() {
                     className={selected ? 'option-button selected' : 'option-button'}
                     onClick={() => selectOption(currentQuestion.id, option.key)}
                   >
-                    <strong>{option.key}</strong>
+                    <strong>{localizeAnswerToken(option.key)}</strong>
                     <span>{option.label}</span>
                   </button>
                 )

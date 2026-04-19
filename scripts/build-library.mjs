@@ -25,7 +25,7 @@ async function main() {
 
   const manifest = {
     id: 'builtin-default',
-    name: 'Builtin Library',
+    name: '内置题库',
     sourceType: 'builtin',
     version: new Date(buildStartedAt).toISOString(),
     questionIds: questions.map((question) => question.id),
@@ -43,7 +43,7 @@ async function main() {
   await fs.writeFile(path.join(outputRoot, 'questions.json'), JSON.stringify(questions, null, 2), 'utf8')
   await fs.writeFile(path.join(outputRoot, 'diagnostics.json'), JSON.stringify(diagnostics, null, 2), 'utf8')
 
-  console.log(`Built builtin library: ${questions.length} questions, ${diagnostics.length} diagnostics.`)
+  console.log(`内置题库构建完成：${questions.length} 道题，${diagnostics.length} 条诊断。`)
 }
 
 async function collectMarkdownFiles(rootDir) {
@@ -83,11 +83,11 @@ function parseQuestion(relativePath, content, diagnostics) {
       : extractedOptions
 
   if (!normalizeString(data.id)) {
-    diagnostics.push(createDiagnostic(questionId, 'missing-id', `Generated fallback id for ${relativePath}.`))
+    diagnostics.push(createDiagnostic(questionId, 'missing-id', `文件 ${relativePath} 缺少题目编号，已生成回退编号。`))
   }
 
   if (answers.length === 0) {
-    diagnostics.push(createDiagnostic(questionId, 'missing-answer', `Question ${questionId} has no scorable answer.`))
+    diagnostics.push(createDiagnostic(questionId, 'missing-answer', `题目 ${questionId} 缺少可判分答案。`))
   }
 
   const optionKeys = new Set(options.map((option) => option.key.toUpperCase()))
@@ -97,7 +97,7 @@ function parseQuestion(relativePath, content, diagnostics) {
       createDiagnostic(
         questionId,
         'option-answer-mismatch',
-        `Question ${questionId} has a declared answer but no options were extracted.`,
+        `题目 ${questionId} 已声明答案，但未提取到选项。`,
       ),
     )
   }
@@ -107,7 +107,7 @@ function parseQuestion(relativePath, content, diagnostics) {
       createDiagnostic(
         questionId,
         'option-answer-mismatch',
-        `Question ${questionId} has answers that do not match extracted options.`,
+        `题目 ${questionId} 的答案与提取到的选项不匹配。`,
       ),
     )
   }
@@ -286,7 +286,7 @@ function createTitle(body, fallbackId) {
     .find(Boolean)
 
   if (!firstContentLine) {
-    return `Untitled-${fallbackId}`
+    return `未命名题目-${fallbackId}`
   }
 
   return firstContentLine.replace(/^#+\s*/, '')

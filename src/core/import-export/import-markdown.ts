@@ -43,11 +43,11 @@ function buildImportedLibraryId(files: File[]): string {
 
 function buildImportedLibraryName(files: File[]): string {
   if (files.length === 1) {
-    return `Imported: ${files[0].name}`
+    return `导入题库：${files[0].name}`
   }
 
-  const firstStem = slugify(files[0]?.name ?? 'library')
-  return `Imported Library (${firstStem || 'markdown'})`
+  const firstStem = slugify(files[0]?.name ?? '')
+  return `导入题库（${firstStem || '首个文件'}）`
 }
 
 function createNamespacedQuestionId(libraryId: string, rawId: string, duplicateIndex: number): string {
@@ -58,7 +58,7 @@ export async function importMarkdownFiles(files: File[]): Promise<ImportedLibrar
   const markdownFiles = files.filter((file) => file.name.toLowerCase().endsWith('.md'))
 
   if (markdownFiles.length === 0) {
-    throw new Error('No Markdown files were selected.')
+    throw new Error('未选择任何题库文件。')
   }
 
   const libraryId = buildImportedLibraryId(markdownFiles)
@@ -94,7 +94,7 @@ export async function importMarkdownFiles(files: File[]): Promise<ImportedLibrar
           libraryId,
           questionId: nextId,
           type: 'duplicate-id',
-          message: `Duplicate question id detected: ${entry.rawId}. Generated fallback namespaced id ${nextId}.`,
+          message: `检测到重复题目编号：${entry.rawId}。系统已生成回退命名空间编号：${nextId}。`,
         }),
       )
     }

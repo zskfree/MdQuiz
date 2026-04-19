@@ -58,10 +58,16 @@ export function createBackupPayload(input: CreateBackupPayloadInput): BackupPayl
 }
 
 export function parseBackupPayload(raw: string): BackupPayload {
-  const parsed = JSON.parse(raw) as unknown
+  let parsed: unknown
+
+  try {
+    parsed = JSON.parse(raw) as unknown
+  } catch {
+    throw new Error('备份文件内容格式有误，请检查后重试。')
+  }
 
   if (!isObject(parsed) || parsed.app !== 'mdquiz' || parsed.version !== 1 || !isObject(parsed.data)) {
-    throw new Error('Invalid MdQuiz backup payload.')
+    throw new Error('备份文件格式无效。')
   }
 
   const data = parsed.data
@@ -74,7 +80,7 @@ export function parseBackupPayload(raw: string): BackupPayload {
     !Array.isArray(data.sessions) ||
     !Array.isArray(data.examResults)
   ) {
-    throw new Error('MdQuiz backup payload is missing required arrays.')
+    throw new Error('备份文件缺少必要的数据数组。')
   }
 
   return parsed as BackupPayload

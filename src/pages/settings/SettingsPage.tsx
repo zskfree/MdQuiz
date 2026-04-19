@@ -12,6 +12,14 @@ function downloadJson(filename: string, content: string) {
   URL.revokeObjectURL(url)
 }
 
+function resolveVisibleError(error: unknown, fallbackMessage: string): string {
+  if (error instanceof Error && /[\u4e00-\u9fa5]/.test(error.message)) {
+    return error.message
+  }
+
+  return fallbackMessage
+}
+
 export function SettingsPage() {
   const [message, setMessage] = useState<string>()
   const [error, setError] = useState<string>()
@@ -73,7 +81,7 @@ export function SettingsPage() {
         `已导入 ${payload.data.libraries.length} 个题库、${payload.data.memoryRecords.length} 条学习记录和 ${payload.data.examResults.length} 条考试记录。`,
       )
     } catch (importError) {
-      setError(importError instanceof Error ? importError.message : '备份导入失败。')
+      setError(resolveVisibleError(importError, '备份导入失败。'))
     } finally {
       event.target.value = ''
     }
@@ -82,7 +90,7 @@ export function SettingsPage() {
   return (
     <section className="page">
       <header className="page-header">
-        <p className="eyebrow">Settings</p>
+        <p className="eyebrow">设置</p>
         <h1>设置</h1>
       </header>
 
@@ -94,11 +102,11 @@ export function SettingsPage() {
 
         <div className="action-row">
           <button type="button" className="action-button" onClick={handleExport}>
-            导出 JSON 备份
+            导出备份文件
           </button>
 
           <label className="secondary-button file-button">
-            导入 JSON 备份
+            导入备份文件
             <input type="file" accept="application/json,.json" hidden onChange={handleImport} />
           </label>
         </div>
