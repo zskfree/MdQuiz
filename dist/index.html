@@ -48,6 +48,120 @@
 
 <body>
   <div id="root"></div>
+  <script>
+      ; (() => {
+        const localHosts = new Set(['localhost', '127.0.0.1'])
+        const isLocalDev = localHosts.has(window.location.hostname)
+
+        if (isLocalDev) {
+          return
+        }
+
+        const normalizePath = (value) => {
+          const normalized = value.replace(/\/+/g, '/')
+          return normalized.startsWith('/') ? normalized : `/${normalized}`
+        }
+
+        const ensureTrailingSlash = (value) => (value.endsWith('/') ? value : `${value}/`)
+
+        const absoluteUrl = (path) => new URL(path, window.location.origin).toString()
+
+        const unique = (items) => Array.from(new Set(items))
+
+        const pathname = window.location.pathname || '/'
+        const hasFileNameInPath = /\.[a-zA-Z0-9]+$/.test(pathname)
+        const pathnameAsDirectory = hasFileNameInPath ? pathname.replace(/[^/]+$/, '') : `${pathname}/`
+
+        const candidateRoots = unique(
+          [
+            pathnameAsDirectory,
+            pathname,
+            new URL('./', window.location.href).pathname,
+            new URL('../', window.location.href).pathname,
+            '/',
+          ].map((path) => ensureTrailingSlash(normalizePath(path))),
+        )
+
+        const buildCandidates = (assetPath) =>
+          unique([
+            assetPath,
+            `./${assetPath}`,
+            `dist/${assetPath}`,
+            `./dist/${assetPath}`,
+            ...candidateRoots.flatMap((root) => [
+              absoluteUrl(normalizePath(`${root}${assetPath}`)),
+              absoluteUrl(normalizePath(`${root}dist/${assetPath}`)),
+            ]),
+          ])
+
+        const appendStyle = (href) => {
+          if (document.querySelector(`link[rel="stylesheet"][href="${href}"]`)) {
+            return
+          }
+
+          const link = document.createElement('link')
+          link.rel = 'stylesheet'
+          link.href = href
+          link.crossOrigin = 'anonymous'
+          document.head.appendChild(link)
+        }
+
+        const root = document.getElementById('root')
+
+        const isAppMounted = () => {
+          return Boolean(root && root.childNodes.length > 0)
+        }
+
+        const fallbackBootstrap = async () => {
+          if (isAppMounted()) {
+            return
+          }
+
+          const styleCandidates = buildCandidates('assets/index.css')
+          styleCandidates.forEach((href) => appendStyle(href))
+
+          const scriptCandidates = buildCandidates('assets/index.js')
+          const attempted = []
+
+          for (const entry of scriptCandidates) {
+            try {
+              attempted.push(entry)
+              await import(entry)
+
+              if (isAppMounted()) {
+                return
+              }
+            } catch {
+              // Try next candidate.
+            }
+          }
+
+          if (isAppMounted()) {
+            return
+          }
+
+          const hint = document.createElement('p')
+          hint.style.padding = '16px'
+          hint.style.color = '#b91c1c'
+          hint.textContent = '页面资源加载失败：请确认服务器发布的是 dist 目录内容。'
+          document.body.appendChild(hint)
+
+          const detail = document.createElement('pre')
+          detail.style.padding = '0 16px 16px'
+          detail.style.margin = '0'
+          detail.style.color = '#9f1239'
+          detail.style.whiteSpace = 'pre-wrap'
+          detail.textContent = ['已尝试加载以下脚本：', ...attempted].join('\n')
+          document.body.appendChild(detail)
+        }
+
+        window.addEventListener('load', () => {
+          window.setTimeout(() => {
+            void fallbackBootstrap()
+          }, 1500)
+        })
+      })()
+  </script>
 </body>
 
 </html>
