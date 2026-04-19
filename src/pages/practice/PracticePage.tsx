@@ -2,6 +2,8 @@
 import { MarkdownRenderer } from '../../core/renderer'
 import { useLibraryStore, useReviewStore, useSessionStore } from '../../stores'
 
+const QUICK_MODE_AUTO_ADVANCE_DELAY_MS = 520
+
 function getPracticeNavState(input: {
   selectedCount: number
   submitted: boolean
@@ -65,6 +67,22 @@ function localizeAnswerToken(token: string): string {
 
 function localizeAnswerList(answers: string[]): string {
   return answers.map(localizeAnswerToken).join(', ')
+}
+
+function toggleSelectedOption(selected: string[], optionKey: string): string[] {
+  if (selected.includes(optionKey)) {
+    return selected.filter((item) => item !== optionKey)
+  }
+
+  return [...selected, optionKey]
+}
+
+function isExactAnswerMatch(selected: string[], expected: Set<string>): boolean {
+  if (selected.length !== expected.size) {
+    return false
+  }
+
+  return selected.every((item) => expected.has(item))
 }
 
 export function PracticePage() {
@@ -133,10 +151,22 @@ export function PracticePage() {
       return
     }
 
+    const nextSelected = toggleSelectedOption(resolvedAnswer.selected, optionKey)
     selectOption(questionId, optionKey)
 
     if (quickMode && currentQuestion.type !== 'multiple') {
       submitCurrentAnswer()
+      return
+    }
+
+    if (
+      quickMode &&
+      currentQuestion.type === 'multiple' &&
+      isExactAnswerMatch(nextSelected, expectedAnswers)
+    ) {
+      window.setTimeout(() => {
+        submitCurrentAnswer()
+      }, 0)
     }
   }
 
@@ -151,7 +181,7 @@ export function PracticePage() {
 
     const timer = window.setTimeout(() => {
       goToNextQuestion()
-    }, 320)
+    }, QUICK_MODE_AUTO_ADVANCE_DELAY_MS)
 
     return () => window.clearTimeout(timer)
   }, [currentQuestion, feedback, goToNextQuestion, quickMode])
