@@ -224,6 +224,153 @@ select {
   color: var(--accent);
 }
 
+.dashboard-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 10px 0 8px;
+}
+
+.metric-tile {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 10px 12px;
+  background: var(--panel-strong);
+  display: grid;
+  gap: 4px;
+}
+
+.metric-label {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.metric-value {
+  font-size: 1.05rem;
+  color: var(--accent-ink);
+}
+
+.dashboard-chart-grid {
+  margin-top: 2px;
+}
+
+.accuracy-bars {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(44px, 1fr));
+  gap: 8px;
+  align-items: end;
+  margin-top: 10px;
+}
+
+.accuracy-bar {
+  display: grid;
+  gap: 6px;
+  text-align: center;
+}
+
+.accuracy-bar-value,
+.accuracy-bar-label {
+  color: var(--muted);
+  font-size: 0.74rem;
+}
+
+.accuracy-bar-track {
+  height: 132px;
+  border-radius: 999px;
+  background: #e5e7eb;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+}
+
+.accuracy-bar-fill {
+  width: 100%;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #84cc16 0%, #14532d 100%);
+}
+
+.level-chart-layout {
+  display: grid;
+  grid-template-columns: 168px minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.level-donut {
+  width: 168px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.level-donut::after {
+  content: '';
+  position: absolute;
+  inset: 22px;
+  border-radius: 50%;
+  background: var(--panel);
+  border: 1px solid var(--line);
+}
+
+.level-donut span,
+.level-donut small {
+  position: relative;
+  z-index: 1;
+}
+
+.level-donut span {
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: var(--accent-ink);
+  line-height: 1;
+}
+
+.level-donut small {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.level-list {
+  display: grid;
+  gap: 8px;
+}
+
+.level-row {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) 32px;
+  align-items: center;
+  gap: 8px;
+}
+
+.level-label {
+  font-weight: 700;
+  font-size: 0.84rem;
+}
+
+.level-bar-track {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: #e5e7eb;
+  overflow: hidden;
+}
+
+.level-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  min-width: 2px;
+}
+
+.level-count {
+  color: var(--muted);
+  text-align: right;
+  font-size: 0.82rem;
+}
+
 .practice-layout {
   display: grid;
   gap: 10px;
@@ -607,6 +754,24 @@ select {
     grid-template-columns: 1fr;
   }
 
+  .dashboard-metrics {
+    gap: 8px;
+  }
+
+  .accuracy-bar-track {
+    height: 112px;
+  }
+
+  .level-chart-layout {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: 12px;
+  }
+
+  .level-list {
+    width: 100%;
+  }
+
   .app-main {
     padding: 20px;
   }
@@ -889,6 +1054,37 @@ select {
 
   .mobile-topbar-title {
     font-size: 0.96rem;
+  }
+
+  .metric-label {
+    font-size: 0.78rem;
+  }
+
+  .metric-value {
+    font-size: 0.98rem;
+  }
+
+  .accuracy-bars {
+    gap: 6px;
+    grid-template-columns: repeat(auto-fit, minmax(38px, 1fr));
+  }
+
+  .accuracy-bar-track {
+    height: 96px;
+  }
+
+  .accuracy-bar-value,
+  .accuracy-bar-label {
+    font-size: 0.7rem;
+  }
+
+  .level-donut {
+    width: 150px;
+  }
+
+  .level-row {
+    grid-template-columns: 30px minmax(0, 1fr) 28px;
+    gap: 6px;
   }
 
   body.quick-mode-active .app-main {
