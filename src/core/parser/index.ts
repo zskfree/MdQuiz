@@ -1,4 +1,5 @@
 export * from './diagnostics'
 export * from './frontmatter'
 export * from './option-extractor'
+export * from './question-collection-parser'
 export * from './question-parser'

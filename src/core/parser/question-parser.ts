@@ -71,7 +71,7 @@ function normalizeBooleanValue(value: string): 'TRUE' | 'FALSE' | undefined {
   return undefined
 }
 
-function normalizeAnswer(value: unknown): string[] {
+export function normalizeAnswer(value: unknown): string[] {
   if (Array.isArray(value)) {
     return value.flatMap((item) => normalizeAnswer(item))
   }
@@ -109,14 +109,14 @@ function normalizeAnswer(value: unknown): string[] {
   return [trimmed.toUpperCase()]
 }
 
-function createDefaultBooleanOptions(): QuestionOption[] {
+export function createDefaultBooleanOptions(): QuestionOption[] {
   return [
     { key: 'TRUE', label: '正确' },
     { key: 'FALSE', label: '错误' },
   ]
 }
 
-function buildBooleanOptionMeta(extractedOptions: QuestionOption[]): BooleanOptionMeta | undefined {
+export function buildBooleanOptionMeta(extractedOptions: QuestionOption[]): BooleanOptionMeta | undefined {
   if (extractedOptions.length === 0) {
     return undefined
   }
@@ -157,7 +157,7 @@ function buildBooleanOptionMeta(extractedOptions: QuestionOption[]): BooleanOpti
   }
 }
 
-function inferQuestionType(
+export function inferQuestionType(
   frontmatterType: string | undefined,
   answers: string[],
   booleanOptionMeta: BooleanOptionMeta | undefined,
@@ -184,7 +184,7 @@ function inferQuestionType(
   return 'single'
 }
 
-function normalizeBooleanAnswers(answers: string[], booleanOptionMeta: BooleanOptionMeta | undefined): string[] {
+export function normalizeBooleanAnswers(answers: string[], booleanOptionMeta: BooleanOptionMeta | undefined): string[] {
   const normalized = new Set<string>()
 
   for (const answer of answers) {
@@ -206,7 +206,7 @@ function normalizeBooleanAnswers(answers: string[], booleanOptionMeta: BooleanOp
   return Array.from(normalized)
 }
 
-function answerMatchesOptions(type: QuestionType, answers: string[], optionKeys: Set<string>): boolean {
+export function answerMatchesOptions(type: QuestionType, answers: string[], optionKeys: Set<string>): boolean {
   if (type === 'boolean') {
     return answers.every((answer) => answer === 'TRUE' || answer === 'FALSE')
   }

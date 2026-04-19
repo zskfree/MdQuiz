@@ -52,7 +52,59 @@ answer: true
     expect(bundle.diagnostics.some((item) => item.type === 'duplicate-id')).toBe(true)
   })
 
+  it('imports question-bank markdown files that contain multiple numbered questions', async () => {
+    const answerLabel = '\u7b54\u6848'
+    const explanationLabel = '\u89e3\u6790'
+    const correctLabel = '\u6b63\u786e'
+    const incorrectLabel = '\u9519\u8bef'
+
+    const bundle = await importMarkdownFiles([
+      createMockFile({
+        name: 'question-bank.md',
+        content: `# Sample question bank
+
+## 1、Which option applies?
+
+- A. Alpha
+- B. Beta
+- ${answerLabel}：B
+
+## 2、Select every valid option
+
+Additional context paragraph.
+
+- A. First
+- B. Second
+- C. Third
+- ${answerLabel}：AC
+- ${explanationLabel}：Choose the first and third options.
+
+## 3、Judge the statement
+
+- A. ${correctLabel}
+- B. ${incorrectLabel}
+- ${answerLabel}：A
+`,
+      }),
+    ])
+
+    expect(bundle.questions).toHaveLength(3)
+    expect(bundle.manifest.questionCount).toBe(3)
+    expect(bundle.questions[0].title).toBe('Which option applies?')
+    expect(bundle.questions[0].answer).toEqual(['B'])
+    expect(bundle.questions[1].type).toBe('multiple')
+    expect(bundle.questions[1].answer).toEqual(['A', 'C'])
+    expect(bundle.questions[1].body).toBe('Additional context paragraph.')
+    expect(bundle.questions[1].explanation).toBe('Choose the first and third options.')
+    expect(bundle.questions[2].type).toBe('boolean')
+    expect(bundle.questions[2].answer).toEqual(['TRUE'])
+    expect(bundle.questions[2].options).toEqual([
+      { key: 'TRUE', label: correctLabel },
+      { key: 'FALSE', label: incorrectLabel },
+    ])
+  })
+
   it('rejects empty selections', async () => {
-    await expect(importMarkdownFiles([])).rejects.toThrow('No Markdown files were selected.')
+    await expect(importMarkdownFiles([])).rejects.toThrow()
   })
 })

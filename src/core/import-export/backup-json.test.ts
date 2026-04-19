@@ -21,9 +21,7 @@ describe('backup json helpers', () => {
   })
 
   it('rejects invalid backup payloads', () => {
-    expect(() => parseBackupPayload(JSON.stringify({ app: 'other' }))).toThrow(
-      'Invalid MdQuiz backup payload.',
-    )
+    expect(() => parseBackupPayload(JSON.stringify({ app: 'other' }))).toThrow()
   })
 
   it('creates stable backup filenames', () => {

@@ -1,4 +1,4 @@
-import { createDiagnosticIssue, parseMarkdownQuestion } from '../parser'
+import { createDiagnosticIssue, parseMarkdownQuestion, parseMarkdownQuestionCollection } from '../parser'
 import type { DiagnosticIssue, LibraryManifest, Question } from '../../types'
 
 type ImportedLibraryBundle = {
@@ -66,17 +66,30 @@ export async function importMarkdownFiles(files: File[]): Promise<ImportedLibrar
 
   for (const file of markdownFiles) {
     const content = await file.text()
-    const result = parseMarkdownQuestion({
+    const collectionResults = parseMarkdownQuestionCollection({
       libraryId,
       sourcePath: file.name,
       content,
     })
 
-    parsedEntries.push({
-      rawId: result.question.id,
-      question: result.question,
-      diagnostics: result.diagnostics,
-    })
+    const parsedResults =
+      collectionResults.length > 0
+        ? collectionResults
+        : [
+            parseMarkdownQuestion({
+              libraryId,
+              sourcePath: file.name,
+              content,
+            }),
+          ]
+
+    for (const result of parsedResults) {
+      parsedEntries.push({
+        rawId: result.question.id,
+        question: result.question,
+        diagnostics: result.diagnostics,
+      })
+    }
   }
 
   const duplicateCounter = new Map<string, number>()
