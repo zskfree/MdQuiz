@@ -41,10 +41,11 @@ type LibraryStoreState = {
 }
 
 async function fetchBuiltinLibrary(): Promise<BuiltinLibraryPayload> {
+  const builtinLibraryBaseUrl = new URL('builtin-library/', window.location.origin + import.meta.env.BASE_URL)
   const [manifestResponse, questionsResponse, diagnosticsResponse] = await Promise.all([
-    fetch('/builtin-library/manifest.json'),
-    fetch('/builtin-library/questions.json'),
-    fetch('/builtin-library/diagnostics.json'),
+    fetch(new URL('manifest.json', builtinLibraryBaseUrl)),
+    fetch(new URL('questions.json', builtinLibraryBaseUrl)),
+    fetch(new URL('diagnostics.json', builtinLibraryBaseUrl)),
   ])
 
   if (!manifestResponse.ok) {
