@@ -172,7 +172,7 @@ export const useSessionStore = create<SessionStoreState>((set, get) => ({
   toggleQuickMode: () => {
     const session = get().currentSession
 
-    if (!session || session.mode === 'exam') {
+    if (!session) {
       return
     }
 

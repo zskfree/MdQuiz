@@ -36,6 +36,10 @@ function getExamNavState(input: { current: boolean; answered: boolean; marked: b
   return 'nav-chip'
 }
 
+function getExamOptionClassName(selected: boolean): string {
+  return selected ? 'option-button selected' : 'option-button'
+}
+
 function localizeAnswerToken(token: string): string {
   const uppercaseToken = token.toUpperCase()
   const optionKeyMap: Record<string, string> = {
@@ -89,6 +93,7 @@ export function ExamPage() {
   const goToNextQuestion = useSessionStore((state) => state.goToNextQuestion)
   const setCurrentIndex = useSessionStore((state) => state.setCurrentIndex)
   const toggleMarkedQuestion = useSessionStore((state) => state.toggleMarkedQuestion)
+  const toggleQuickMode = useSessionStore((state) => state.toggleQuickMode)
   const clearCurrentSession = useSessionStore((state) => state.clearCurrentSession)
   const submitCurrentExam = useExamStore((state) => state.submitCurrentExam)
   const getResultBySessionId = useExamStore((state) => state.getResultBySessionId)
@@ -104,6 +109,21 @@ export function ExamPage() {
     currentSession?.mode === 'exam' && currentSession.status === 'completed'
       ? getResultBySessionId(currentSession.id)
       : undefined
+  const quickMode = Boolean(
+    currentSession?.mode === 'exam' && currentSession.status === 'active' && currentSession.config.quickMode,
+  )
+
+  useEffect(() => {
+    if (quickMode) {
+      document.body.classList.add('quick-mode-active')
+    } else {
+      document.body.classList.remove('quick-mode-active')
+    }
+
+    return () => {
+      document.body.classList.remove('quick-mode-active')
+    }
+  }, [quickMode])
 
   useEffect(() => {
     if (!currentSession || currentSession.mode !== 'exam' || currentSession.status !== 'active') {
@@ -161,6 +181,7 @@ export function ExamPage() {
     startExamSession(activeLibrary.id, selectedQuestionIds, {
       questionLimit: limit,
       timeLimitSeconds: Math.max(timeLimitMinutes, 1) * 60,
+      quickMode: false,
     })
   }
 
@@ -186,16 +207,81 @@ export function ExamPage() {
     })
   }
 
+  const handleOptionSelect = (questionId: string, optionKey: string) => {
+    if (!currentQuestion || !currentSession) {
+      return
+    }
+
+    selectOption(questionId, optionKey)
+
+    if (quickMode && currentQuestion.type !== 'multiple') {
+      goToNextQuestion()
+    }
+  }
+
+  useEffect(() => {
+    if (!currentQuestion || !currentSession) {
+      return
+    }
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      const key = event.key.toUpperCase()
+
+      if (/^[1-9]$/.test(event.key)) {
+        const index = Number.parseInt(event.key, 10) - 1
+        const option = currentQuestion.options[index]
+
+        if (option) {
+          event.preventDefault()
+          handleOptionSelect(currentQuestion.id, option.key)
+        }
+        return
+      }
+
+      if (/^[A-Z]$/.test(key)) {
+        const option = currentQuestion.options.find((item) => item.key.toUpperCase() === key)
+
+        if (option) {
+          event.preventDefault()
+          handleOptionSelect(currentQuestion.id, option.key)
+          return
+        }
+      }
+
+      if (key === 'M') {
+        event.preventDefault()
+        toggleMarkedQuestion(currentQuestion.id)
+        return
+      }
+
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault()
+        goToPreviousQuestion()
+        return
+      }
+
+      if (event.key === 'ArrowRight' || event.key === 'Enter') {
+        event.preventDefault()
+        goToNextQuestion()
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [currentQuestion, currentSession, goToNextQuestion, goToPreviousQuestion, quickMode, toggleMarkedQuestion])
+
   const isExamSession = currentSession?.mode === 'exam'
 
   return (
-    <section className="page">
-      <header className="page-header">
-        <p className="eyebrow">考试</p>
-        <h1>模拟考试</h1>
-      </header>
+    <section className={quickMode ? 'page practice-page quick-mode' : 'page practice-page'}>
+      {!quickMode ? (
+        <header className="page-header">
+          <p className="eyebrow">考试</p>
+          <h1>模拟考试</h1>
+        </header>
+      ) : null}
 
-      <article className="card">
+      <article className={quickMode ? 'card quick-mode-card' : 'card'}>
         {!isExamSession ? (
           <div className="practice-layout">
             <h2>固定试卷快照</h2>
@@ -286,78 +372,45 @@ export function ExamPage() {
           </div>
         ) : currentQuestion ? (
           <div className="practice-layout">
-            <div className="practice-meta">
-              <span>
-                第 {currentSession.currentIndex + 1} / {currentSession.questionIds.length} 题
-              </span>
-              <span>已作答：{answeredCount}</span>
-              <span>标记回看：{markedCount}</span>
-              <span>剩余时间：{formatSeconds(remainingSeconds ?? currentSession.config.timeLimitSeconds ?? 0)}</span>
-            </div>
+            <div className="practice-topbar">
+              <div className={quickMode ? 'quick-mode-progress' : 'practice-progress'}>
+                <span>
+                  第 {currentSession.currentIndex + 1} / {currentSession.questionIds.length} 题
+                </span>
+                <span>已作答：{answeredCount}</span>
+                <span>标记回看：{markedCount}</span>
+                <span>剩余时间：{formatSeconds(remainingSeconds ?? currentSession.config.timeLimitSeconds ?? 0)}</span>
+              </div>
 
-            <div className="nav-panel">
-              <button
-                type="button"
-                className="secondary-button nav-toggle"
-                onClick={() => setShowNavCard((value) => !value)}
-              >
-                {showNavCard
-                  ? '收起答题卡'
-                  : `展开答题卡 ${currentSession.currentIndex + 1}/${currentSession.questionIds.length}`}
-              </button>
-
-              {showNavCard ? (
-                <div className="navigation-grid">
-                  {currentSession.questionIds.map((questionId, index) => {
-                    const answered = (currentSession.answers[questionId]?.selected?.length ?? 0) > 0
-                    const marked = currentSession.marks[questionId] ?? false
-
-                    return (
-                      <button
-                        key={questionId}
-                        type="button"
-                        className={getExamNavState({
-                          current: currentSession.currentIndex === index,
-                          answered,
-                          marked,
-                        })}
-                        onClick={() => handleJumpToQuestion(index)}
-                      >
-                        {index + 1}
-                      </button>
-                    )
-                  })}
+              {quickMode ? (
+                <div className="quick-mode-tools">
+                  <button
+                    type="button"
+                    className="secondary-button quick-mode-mark-toggle"
+                    onClick={() => toggleMarkedQuestion(currentQuestion.id)}
+                  >
+                    {currentSession.marks[currentQuestion.id] ? '取消标记' : '标记回看'}
+                  </button>
+                  <button type="button" className="secondary-button quick-mode-toggle" onClick={toggleQuickMode}>
+                    退出快速刷题
+                  </button>
+                  <button type="button" className="action-button" onClick={handleSubmitExam}>
+                    交卷
+                  </button>
                 </div>
-              ) : null}
+              ) : (
+                <div className="quick-mode-tools">
+                  <button type="button" className="secondary-button quick-mode-toggle" onClick={toggleQuickMode}>
+                    开启快速刷题
+                  </button>
+                  <button type="button" className="action-button" onClick={handleSubmitExam}>
+                    交卷
+                  </button>
+                </div>
+              )}
             </div>
 
-            <div className="action-row">
-              <button
-                className="secondary-button"
-                onClick={goToPreviousQuestion}
-                disabled={currentSession.currentIndex === 0}
-              >
-                上一题
-              </button>
-              <button
-                className="secondary-button"
-                onClick={() => toggleMarkedQuestion(currentQuestion.id)}
-              >
-                {currentSession.marks[currentQuestion.id] ? '取消标记' : '标记回看'}
-              </button>
-              <button
-                className="secondary-button"
-                onClick={goToNextQuestion}
-                disabled={currentSession.currentIndex === currentSession.questionIds.length - 1}
-              >
-                下一题
-              </button>
-              <button className="action-button" onClick={handleSubmitExam}>
-                交卷
-              </button>
-            </div>
-
-            <h2>{currentQuestion.title}</h2>
+            <h3 className={quickMode ? 'quick-mode-title' : undefined}>{currentQuestion.title}</h3>
             <div className="question-body">
               <MarkdownRenderer content={currentQuestion.body} />
             </div>
@@ -370,8 +423,8 @@ export function ExamPage() {
                   <button
                     key={option.key}
                     type="button"
-                    className={selected ? 'option-button selected' : 'option-button'}
-                    onClick={() => selectOption(currentQuestion.id, option.key)}
+                    className={getExamOptionClassName(selected)}
+                    onClick={() => handleOptionSelect(currentQuestion.id, option.key)}
                   >
                     <strong>{localizeAnswerToken(option.key)}</strong>
                     <span>{option.label}</span>
@@ -379,6 +432,83 @@ export function ExamPage() {
                 )
               })}
             </div>
+
+            {quickMode ? (
+              <div className="action-row quick-nav-actions">
+                <button
+                  className="secondary-button"
+                  onClick={goToPreviousQuestion}
+                  disabled={currentSession.currentIndex === 0}
+                >
+                  上一题
+                </button>
+                <button
+                  className="secondary-button"
+                  onClick={goToNextQuestion}
+                  disabled={currentSession.currentIndex === currentSession.questionIds.length - 1}
+                >
+                  下一题
+                </button>
+              </div>
+            ) : (
+              <div className="action-row question-actions">
+                <button
+                  className="secondary-button"
+                  onClick={goToPreviousQuestion}
+                  disabled={currentSession.currentIndex === 0}
+                >
+                  上一题
+                </button>
+                <button
+                  className="secondary-button"
+                  onClick={goToNextQuestion}
+                  disabled={currentSession.currentIndex === currentSession.questionIds.length - 1}
+                >
+                  下一题
+                </button>
+                <button className="secondary-button" onClick={() => toggleMarkedQuestion(currentQuestion.id)}>
+                  {currentSession.marks[currentQuestion.id] ? '取消标记' : '标记回看'}
+                </button>
+              </div>
+            )}
+
+            {!quickMode ? (
+              <div className="nav-panel nav-panel-bottom">
+                <button
+                  type="button"
+                  className="secondary-button nav-toggle"
+                  onClick={() => setShowNavCard((value) => !value)}
+                >
+                  {showNavCard
+                    ? '收起答题卡'
+                    : `展开答题卡 ${currentSession.currentIndex + 1}/${currentSession.questionIds.length}`}
+                </button>
+
+                {showNavCard ? (
+                  <div className="navigation-grid">
+                    {currentSession.questionIds.map((questionId, index) => {
+                      const answered = (currentSession.answers[questionId]?.selected?.length ?? 0) > 0
+                      const marked = currentSession.marks[questionId] ?? false
+
+                      return (
+                        <button
+                          key={questionId}
+                          type="button"
+                          className={getExamNavState({
+                            current: currentSession.currentIndex === index,
+                            answered,
+                            marked,
+                          })}
+                          onClick={() => handleJumpToQuestion(index)}
+                        >
+                          {index + 1}
+                        </button>
+                      )
+                    })}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
           </div>
         ) : (
           <p className="muted">考试题目不可用。</p>
