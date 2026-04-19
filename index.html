@@ -67,19 +67,31 @@
 
         const unique = (items) => Array.from(new Set(items))
 
+        const pathname = window.location.pathname || '/'
+        const hasFileNameInPath = /\.[a-zA-Z0-9]+$/.test(pathname)
+        const pathnameAsDirectory = hasFileNameInPath ? pathname.replace(/[^/]+$/, '') : `${pathname}/`
+
         const candidateRoots = unique(
-          [new URL('./', window.location.href).pathname, new URL('../', window.location.href).pathname, '/'].map(
-            (path) => ensureTrailingSlash(normalizePath(path)),
-          ),
+          [
+            pathnameAsDirectory,
+            pathname,
+            new URL('./', window.location.href).pathname,
+            new URL('../', window.location.href).pathname,
+            '/',
+          ].map((path) => ensureTrailingSlash(normalizePath(path))),
         )
 
         const buildCandidates = (assetPath) =>
-          unique(
-            candidateRoots.flatMap((root) => [
+          unique([
+            assetPath,
+            `./${assetPath}`,
+            `dist/${assetPath}`,
+            `./dist/${assetPath}`,
+            ...candidateRoots.flatMap((root) => [
               absoluteUrl(normalizePath(`${root}${assetPath}`)),
               absoluteUrl(normalizePath(`${root}dist/${assetPath}`)),
             ]),
-          )
+          ])
 
         const appendStyle = (href) => {
           if (document.querySelector(`link[rel="stylesheet"][href="${href}"]`)) {
