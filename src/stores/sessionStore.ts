@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { gradeQuestion } from '../core/grading'
-import { loadStoredSessions, saveSession, saveSessions } from '../core/storage'
+import { deleteSessionsByLibrary, loadStoredSessions, saveSession, saveSessions } from '../core/storage'
 import type { QuizSession, SessionAnswer, SessionConfig, SessionMode } from '../types'
 import { useLibraryStore } from './libraryStore'
 import { useReviewStore } from './reviewStore'
@@ -36,6 +36,7 @@ type SessionStoreState = {
   goToNextQuestion: () => void
   completeCurrentSession: (endedAt?: number) => void
   clearCurrentSession: () => void
+  clearSessionsForLibrary: (libraryId: string) => Promise<number>
   toggleMarkedQuestion: (questionId?: string) => void
   toggleExplanation: () => void
   getCurrentQuestionId: () => string | undefined
@@ -390,6 +391,17 @@ export const useSessionStore = create<SessionStoreState>((set, get) => ({
       currentSession: undefined,
       feedback: undefined,
     })
+  },
+
+  clearSessionsForLibrary: async (libraryId) => {
+    const deletedCount = await deleteSessionsByLibrary(libraryId)
+
+    set((state) => ({
+      currentSession: state.currentSession?.libraryId === libraryId ? undefined : state.currentSession,
+      feedback: state.currentSession?.libraryId === libraryId ? undefined : state.feedback,
+    }))
+
+    return deletedCount
   },
 
   toggleMarkedQuestion: (questionId) => {

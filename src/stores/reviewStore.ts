@@ -5,7 +5,12 @@ import {
   getLevelDistribution,
   updateMemoryRecord,
 } from '../core/memory'
-import { loadMemoryRecords, saveMemoryRecord, saveMemoryRecords } from '../core/storage'
+import {
+  deleteMemoryRecordsByLibrary,
+  loadMemoryRecords,
+  saveMemoryRecord,
+  saveMemoryRecords,
+} from '../core/storage'
 import type { MemoryLevel, MemoryRecord } from '../types'
 
 type ReviewStoreState = {
@@ -20,6 +25,7 @@ type ReviewStoreState = {
     reviewedAt?: number
   }) => MemoryRecord
   getMemoryRecord: (libraryId: string, questionId: string) => MemoryRecord | undefined
+  clearRecordsForLibrary: (libraryId: string) => Promise<number>
   getDueCount: (now?: number) => number
   getDueQuestionIds: (libraryId?: string, now?: number) => string[]
   getWrongQuestionIds: (libraryId?: string) => string[]
@@ -80,6 +86,18 @@ export const useReviewStore = create<ReviewStoreState>((set, get) => ({
   },
 
   getMemoryRecord: (libraryId, questionId) => get().memoryRecords[createMemoryRecordKey(libraryId, questionId)],
+
+  clearRecordsForLibrary: async (libraryId) => {
+    const deletedCount = await deleteMemoryRecordsByLibrary(libraryId)
+
+    set((state) => ({
+      memoryRecords: Object.fromEntries(
+        Object.entries(state.memoryRecords).filter(([, record]) => record.libraryId !== libraryId),
+      ),
+    }))
+
+    return deletedCount
+  },
 
   getDueCount: (now = Date.now()) =>
     getDueReviewQueue(Object.values(get().memoryRecords), now).length,

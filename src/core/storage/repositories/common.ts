@@ -8,6 +8,36 @@ function requestToPromise<T>(request: IDBRequest<T>): Promise<T> {
   })
 }
 
+async function deleteWithCursor(cursorRequest: IDBRequest<IDBCursorWithValue | null>): Promise<number> {
+  return new Promise<number>((resolve, reject) => {
+    let deletedCount = 0
+
+    cursorRequest.onerror = () => {
+      reject(cursorRequest.error ?? new Error('IndexedDB cursor request failed.'))
+    }
+
+    cursorRequest.onsuccess = () => {
+      const cursor = cursorRequest.result
+
+      if (!cursor) {
+        resolve(deletedCount)
+        return
+      }
+
+      const deleteRequest = cursor.delete()
+
+      deleteRequest.onerror = () => {
+        reject(deleteRequest.error ?? new Error('IndexedDB delete request failed.'))
+      }
+
+      deleteRequest.onsuccess = () => {
+        deletedCount += 1
+        cursor.continue()
+      }
+    }
+  })
+}
+
 export async function getAllValues<T>(storeName: StoreName): Promise<T[]> {
   return withStore(storeName, 'readonly', async (store) => {
     const result = await requestToPromise(store.getAll() as IDBRequest<T[]>)
@@ -33,5 +63,17 @@ export async function putValues<T>(storeName: StoreName, values: T[]): Promise<v
     for (const value of values) {
       await requestToPromise(store.put(value))
     }
+  })
+}
+
+export async function deleteValuesByIndex(
+  storeName: StoreName,
+  indexName: string,
+  key: IDBValidKey,
+): Promise<number> {
+  return withStore(storeName, 'readwrite', async (store) => {
+    const index = store.index(indexName)
+    const cursorRequest = index.openCursor(IDBKeyRange.only(key))
+    return deleteWithCursor(cursorRequest)
   })
 }

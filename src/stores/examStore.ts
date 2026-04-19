@@ -1,6 +1,11 @@
 import { create } from 'zustand'
 import { gradeQuestion } from '../core/grading'
-import { loadStoredExamResults, saveExamResult, saveExamResults } from '../core/storage'
+import {
+  deleteExamResultsByLibrary,
+  loadStoredExamResults,
+  saveExamResult,
+  saveExamResults,
+} from '../core/storage'
 import type { ExamResult } from '../types'
 import { useLibraryStore } from './libraryStore'
 import { useSessionStore } from './sessionStore'
@@ -10,6 +15,7 @@ type ExamStoreState = {
   initialized: boolean
   initialize: () => Promise<void>
   restoreBackup: (results: ExamResult[]) => Promise<void>
+  clearResultsForLibrary: (libraryId: string) => Promise<number>
   submitCurrentExam: (timedOut?: boolean) => Promise<ExamResult | undefined>
   getResultBySessionId: (sessionId: string) => ExamResult | undefined
   getRecentResults: () => ExamResult[]
@@ -41,6 +47,18 @@ export const useExamStore = create<ExamStoreState>((set, get) => ({
         ...Object.fromEntries(results.map((result) => [result.sessionId, result])),
       },
     }))
+  },
+
+  clearResultsForLibrary: async (libraryId) => {
+    const deletedCount = await deleteExamResultsByLibrary(libraryId)
+
+    set((state) => ({
+      results: Object.fromEntries(
+        Object.entries(state.results).filter(([, result]) => result.libraryId !== libraryId),
+      ),
+    }))
+
+    return deletedCount
   },
 
   submitCurrentExam: async (timedOut = false) => {

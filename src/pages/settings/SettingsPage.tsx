@@ -29,11 +29,22 @@ export function SettingsPage() {
   const diagnostics = useLibraryStore((state) => state.diagnostics)
   const restoreLibraries = useLibraryStore((state) => state.restoreBackup)
   const memoryRecords = useReviewStore((state) => state.memoryRecords)
+  const clearMemoryRecordsForLibrary = useReviewStore((state) => state.clearRecordsForLibrary)
   const restoreMemory = useReviewStore((state) => state.restoreBackup)
   const currentSession = useSessionStore((state) => state.currentSession)
+  const clearSessionsForLibrary = useSessionStore((state) => state.clearSessionsForLibrary)
   const restoreSessions = useSessionStore((state) => state.restoreBackup)
   const examResults = useExamStore((state) => state.results)
+  const clearExamResultsForLibrary = useExamStore((state) => state.clearResultsForLibrary)
   const restoreExamResults = useExamStore((state) => state.restoreBackup)
+
+  const activeLibraryMemoryCount = activeLibrary
+    ? Object.values(memoryRecords).filter((record) => record.libraryId === activeLibrary.id).length
+    : 0
+  const activeLibraryExamCount = activeLibrary
+    ? Object.values(examResults).filter((result) => result.libraryId === activeLibrary.id).length
+    : 0
+  const hasActiveSession = currentSession?.libraryId === activeLibrary?.id
 
   const handleExport = () => {
     setError(undefined)
@@ -87,6 +98,37 @@ export function SettingsPage() {
     }
   }
 
+  const handleClearPracticeRecords = async () => {
+    if (!activeLibrary) {
+      setError('请先选择一个题库。')
+      setMessage(undefined)
+      return
+    }
+
+    const confirmed = window.confirm(`确认清除题库“${activeLibrary.name}”的做题记录吗？题库内容本身不会删除。`)
+
+    if (!confirmed) {
+      return
+    }
+
+    setError(undefined)
+    setMessage(undefined)
+
+    try {
+      const [deletedMemoryRecords, deletedSessions, deletedExamResults] = await Promise.all([
+        clearMemoryRecordsForLibrary(activeLibrary.id),
+        clearSessionsForLibrary(activeLibrary.id),
+        clearExamResultsForLibrary(activeLibrary.id),
+      ])
+
+      setMessage(
+        `已清除当前题库的 ${deletedMemoryRecords} 条学习记录、${deletedSessions} 条会话记录和 ${deletedExamResults} 条考试记录。`,
+      )
+    } catch (clearError) {
+      setError(resolveVisibleError(clearError, '清除做题记录失败。'))
+    }
+  }
+
   return (
     <section className="page">
       <header className="page-header">
@@ -109,6 +151,15 @@ export function SettingsPage() {
             导入备份文件
             <input type="file" accept="application/json,.json" hidden onChange={handleImport} />
           </label>
+
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={() => void handleClearPracticeRecords()}
+            disabled={!activeLibrary}
+          >
+            清除当前题库做题记录
+          </button>
         </div>
 
         {message ? <p className="muted">{message}</p> : null}
@@ -121,6 +172,9 @@ export function SettingsPage() {
         <p className="muted">题库数量：{libraries.length}</p>
         <p className="muted">学习记录：{Object.keys(memoryRecords).length}</p>
         <p className="muted">考试记录：{Object.keys(examResults).length}</p>
+        <p className="muted">当前题库学习记录：{activeLibraryMemoryCount}</p>
+        <p className="muted">当前题库考试记录：{activeLibraryExamCount}</p>
+        <p className="muted">当前题库活动会话：{hasActiveSession ? '1' : '0'}</p>
       </article>
     </section>
   )
