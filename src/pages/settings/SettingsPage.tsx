@@ -296,9 +296,10 @@ export function SettingsPage() {
             {autoSyncEnabled ? '关闭自动同步' : '开启自动同步'}
           </button>
 
-          <label className="field inline-field">
-            自动同步间隔
+          <label className="cloud-sync-interval-control">
+            <span>同步间隔</span>
             <select
+              aria-label="自动同步间隔"
               value={String(autoSyncIntervalMinutes)}
               onChange={handleAutoSyncIntervalChange}
               disabled={!cloudUser}

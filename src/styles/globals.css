@@ -540,6 +540,31 @@ select {
   align-items: flex-start;
 }
 
+.cloud-sync-interval-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--panel-strong);
+}
+
+.cloud-sync-interval-control span {
+  color: var(--muted);
+  white-space: nowrap;
+  font-size: 0.9rem;
+}
+
+.cloud-sync-interval-control select {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  padding: 8px 10px;
+  min-height: 32px;
+}
+
 .compact-row {
   align-items: center;
 }
@@ -833,6 +858,7 @@ select {
 
   .cloud-sync-actions .action-button,
   .cloud-sync-actions .secondary-button,
+  .cloud-sync-actions .cloud-sync-interval-control,
   .backup-actions .action-button,
   .backup-actions .secondary-button,
   .backup-actions .file-button {
@@ -841,7 +867,7 @@ select {
     justify-content: center;
   }
 
-  .cloud-sync-actions .inline-field,
+  .cloud-sync-actions .cloud-sync-interval-control,
   .backup-actions .secondary-button:last-child {
     grid-column: 1 / -1;
     min-width: 0;
