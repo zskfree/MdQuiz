@@ -1,3 +1,4 @@
+export * from './cloudSyncStore'
 export * from './examStore'
 export * from './libraryStore'
 export * from './reviewStore'

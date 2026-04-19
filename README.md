@@ -98,6 +98,97 @@ npm run dev
 - `npm run dev` 会先执行 `npm run build:library`
 - 开发环境读取的是最新生成的默认题库数据
 
+## Google 登录与云同步
+
+当前版本已接入 Firebase，实现了：
+
+- Google 登录
+- 手动上传同步（本地 -> 云端）
+- 手动下载恢复（云端 -> 本地，合并恢复）
+- 自动同步开关（前台在线时定时同步）
+
+当前实现不会在源码里内置 Firebase 项目配置，统一从 `VITE_FIREBASE_*` 环境变量读取。
+
+可复制 `.env.example` 到 `.env.local` 并填写：
+
+```bash
+cp .env.example .env.local
+```
+
+如需切换到自己的 Firebase 项目，可在 `.env.local` 覆盖：
+
+```bash
+VITE_FIREBASE_API_KEY=...
+VITE_FIREBASE_AUTH_DOMAIN=...
+VITE_FIREBASE_PROJECT_ID=...
+VITE_FIREBASE_STORAGE_BUCKET=...
+VITE_FIREBASE_MESSAGING_SENDER_ID=...
+VITE_FIREBASE_APP_ID=...
+```
+
+### GitHub Actions Variables 注入（推荐）
+
+公开仓库建议通过 GitHub Actions Variables 注入构建变量，而不是写死在代码中。
+
+在仓库 Settings -> Secrets and variables -> Actions -> Variables 新建以下键：
+
+- `VITE_FIREBASE_API_KEY`
+- `VITE_FIREBASE_AUTH_DOMAIN`
+- `VITE_FIREBASE_PROJECT_ID`
+- `VITE_FIREBASE_STORAGE_BUCKET`
+- `VITE_FIREBASE_MESSAGING_SENDER_ID`
+- `VITE_FIREBASE_APP_ID`
+
+工作流 [deploy.yml](.github/workflows/deploy.yml) 已读取这些变量并注入构建环境。
+
+安全说明：
+
+- `VITE_*` 变量会在前端打包后出现在浏览器端，不属于后端机密。
+- 真正的安全边界依赖 Firebase Firestore/Storage 规则（必须按用户 UID 做读写隔离）。
+
+### Firebase 控制台配置步骤
+
+1. 创建 Firebase 项目
+2. 在 Authentication 中启用 Google 登录
+3. 创建 Firestore Database
+4. 创建 Storage Bucket
+5. 在 Project settings -> Web App 中获取配置
+
+### Firestore 规则示例
+
+```text
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId}/sync/{docId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
+```
+
+### Storage 规则示例
+
+```text
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /users/{userId}/{allPaths=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
+```
+
+### 使用入口
+
+在设置页可完成：
+
+- Google 登录/退出
+- 上传到云端
+- 从云端恢复
+- 开启/关闭自动同步
+
 ## 构建与预览
 
 生产构建：
