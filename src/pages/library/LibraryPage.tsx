@@ -1,7 +1,7 @@
 ﻿import { useMemo, useState } from 'react'
 import {
-  createLibraryBackupFilename,
-  createLibraryBackupPayload,
+  createLibraryMarkdown,
+  createLibraryMarkdownFilename,
 } from '../../core/import-export'
 import { useLibraryStore } from '../../stores'
 
@@ -27,8 +27,8 @@ const DIAGNOSTIC_TYPE_LABELS = {
   'asset-missing': '资源缺失',
 } as const
 
-function downloadJson(filename: string, content: string) {
-  const blob = new Blob([content], { type: 'application/json' })
+function downloadFile(filename: string, content: string, mimeType: string) {
+  const blob = new Blob([content], { type: mimeType })
   const url = URL.createObjectURL(blob)
   const anchor = document.createElement('a')
   anchor.href = url
@@ -128,17 +128,13 @@ export function LibraryPage() {
     setError(undefined)
     setMessage(undefined)
 
-    const payload = createLibraryBackupPayload({
+    const markdown = createLibraryMarkdown({
       library,
       questions: getQuestionsForLibrary(library.id),
-      diagnostics: getDiagnosticsForLibrary(library.id),
     })
 
-    downloadJson(
-      createLibraryBackupFilename(library.name, payload.exportedAt),
-      JSON.stringify(payload, null, 2),
-    )
-    setMessage(`已导出题库“${library.name}”。`)
+    downloadFile(createLibraryMarkdownFilename(library.name), markdown, 'text/markdown;charset=utf-8')
+    setMessage(`已导出题库“${library.name}”的 Markdown 文件。`)
   }
 
   const handleDeleteLibrary = async (libraryId: string) => {

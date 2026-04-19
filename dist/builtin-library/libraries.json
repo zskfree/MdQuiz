@@ -2,7 +2,7 @@
   {
     "id": "builtin-default",
     "name": "中级电力交易员笔试题库",
-    "version": "2026-04-19T08:47:33.918Z",
+    "version": "2026-04-19T08:57:51.644Z",
     "sourceType": "builtin",
     "questionIds": [
       "trader-2025-10-001",
@@ -796,8 +796,8 @@
       "trader-2025-10-789",
       "trader-2025-10-790"
     ],
-    "createdAt": 1776588453918,
-    "updatedAt": 1776588453918,
+    "createdAt": 1776589071644,
+    "updatedAt": 1776589071644,
     "questionCount": 790,
     "scorableCount": 790,
     "meta": {
