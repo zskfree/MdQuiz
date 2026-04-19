@@ -4,6 +4,43 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MdQuiz</title>
+    <script>
+      ;(() => {
+        const reloadFlag = 'mdquiz-reload-on-asset-error'
+
+        const reloadOnce = () => {
+          if (sessionStorage.getItem(reloadFlag) === '1') {
+            return
+          }
+
+          sessionStorage.setItem(reloadFlag, '1')
+          window.location.reload()
+        }
+
+        window.addEventListener(
+          'error',
+          (event) => {
+            const target = event.target
+
+            if (target instanceof HTMLScriptElement) {
+              reloadOnce()
+            }
+          },
+          true,
+        )
+
+        window.addEventListener('unhandledrejection', (event) => {
+          const message = String((event.reason && event.reason.message) || event.reason || '')
+
+          if (
+            message.includes('Failed to fetch dynamically imported module') ||
+            message.includes('Importing a module script failed')
+          ) {
+            reloadOnce()
+          }
+        })
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>
