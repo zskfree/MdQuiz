@@ -46,6 +46,8 @@ type LibraryStoreState = {
 
 type LibrarySnapshot = Pick<LibraryStoreState, 'libraries' | 'questions' | 'diagnostics' | 'activeLibraryId'>
 
+const ACTIVE_LIBRARY_STORAGE_KEY = 'mdquiz.activeLibraryId'
+
 function resolveVisibleError(error: unknown, fallbackMessage: string): string {
   if (error instanceof Error && /[\u4e00-\u9fa5]/.test(error.message)) {
     return error.message
@@ -103,6 +105,39 @@ function sortLibraries(libraries: LibraryManifest[]): LibraryManifest[] {
 
 function pickNextActiveLibraryId(libraries: Record<string, LibraryManifest>): string | undefined {
   return sortLibraries(Object.values(libraries))[0]?.id
+}
+
+function readPersistedActiveLibraryId(): string | undefined {
+  if (typeof window === 'undefined') {
+    return undefined
+  }
+
+  const storedLibraryId = window.localStorage.getItem(ACTIVE_LIBRARY_STORAGE_KEY)?.trim()
+  return storedLibraryId ? storedLibraryId : undefined
+}
+
+function persistActiveLibraryId(libraryId: string | undefined): void {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  if (libraryId) {
+    window.localStorage.setItem(ACTIVE_LIBRARY_STORAGE_KEY, libraryId)
+    return
+  }
+
+  window.localStorage.removeItem(ACTIVE_LIBRARY_STORAGE_KEY)
+}
+
+function resolveActiveLibraryId(
+  libraries: Record<string, LibraryManifest>,
+  preferredLibraryId?: string,
+): string | undefined {
+  if (preferredLibraryId && libraries[preferredLibraryId]) {
+    return preferredLibraryId
+  }
+
+  return pickNextActiveLibraryId(libraries)
 }
 
 function removeLibrariesFromState(state: LibrarySnapshot, libraryIds: Iterable<string>): LibrarySnapshot {
@@ -171,17 +206,18 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
       const libraryMap = buildLibraryMap(libraries)
       const questionMap = buildQuestionMap(questions)
       const diagnosticsMap = buildDiagnosticsMap(diagnostics)
-      const firstLibrary = sortLibraries(libraries)[0]
+      const nextActiveLibraryId = resolveActiveLibraryId(libraryMap, readPersistedActiveLibraryId())
 
       set({
         libraries: libraryMap,
         questions: questionMap,
         diagnostics: diagnosticsMap,
-        activeLibraryId: firstLibrary?.id,
+        activeLibraryId: nextActiveLibraryId,
         isLoading: false,
         initialized: true,
         error: undefined,
       })
+      persistActiveLibraryId(nextActiveLibraryId)
 
       await get().loadBuiltinLibrary()
     } catch (error) {
@@ -222,10 +258,7 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
         ...stateWithoutBuiltin.diagnostics,
         ...buildDiagnosticsMap(diagnostics),
       }
-      const nextActiveLibraryId =
-        stateWithoutBuiltin.activeLibraryId && nextLibraries[stateWithoutBuiltin.activeLibraryId]
-          ? stateWithoutBuiltin.activeLibraryId
-          : pickNextActiveLibraryId(nextLibraries)
+      const nextActiveLibraryId = resolveActiveLibraryId(nextLibraries, stateWithoutBuiltin.activeLibraryId)
 
       set({
         libraries: nextLibraries,
@@ -236,6 +269,7 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
         initialized: true,
         error: undefined,
       })
+      persistActiveLibraryId(nextActiveLibraryId)
     } catch (error) {
       set({
         isLoading: false,
@@ -251,6 +285,7 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
     }
 
     set({ activeLibraryId: libraryId })
+    persistActiveLibraryId(libraryId)
   },
 
   importFiles: async (files) => {
@@ -264,11 +299,15 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
       const bundle = await importMarkdownFiles(files)
       await saveLibraryBundle(bundle.manifest, bundle.questions, bundle.diagnostics)
 
-      set((state) => ({
-        libraries: {
-          ...state.libraries,
-          [bundle.manifest.id]: bundle.manifest,
-        },
+      const state = get()
+      const nextLibraries = {
+        ...state.libraries,
+        [bundle.manifest.id]: bundle.manifest,
+      }
+      const nextActiveLibraryId = resolveActiveLibraryId(nextLibraries, state.activeLibraryId ?? bundle.manifest.id)
+
+      set({
+        libraries: nextLibraries,
         questions: {
           ...state.questions,
           ...buildQuestionMap(bundle.questions),
@@ -277,10 +316,11 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
           ...state.diagnostics,
           [bundle.manifest.id]: bundle.diagnostics,
         },
-        activeLibraryId: bundle.manifest.id,
+        activeLibraryId: nextActiveLibraryId,
         isLoading: false,
         error: undefined,
-      }))
+      })
+      persistActiveLibraryId(nextActiveLibraryId)
     } catch (error) {
       set({
         isLoading: false,
@@ -292,35 +332,31 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
   restoreBackup: async (input) => {
     await saveLibraryBackup(input.libraries, input.questions, input.diagnostics)
 
-    set((state) => {
-      const mergedLibraries = {
-        ...state.libraries,
-        ...buildLibraryMap(input.libraries),
-      }
-      const mergedQuestions = {
-        ...state.questions,
-        ...buildQuestionMap(input.questions),
-      }
-      const mergedDiagnostics = {
-        ...state.diagnostics,
-        ...buildDiagnosticsMap(input.diagnostics),
-      }
-      const requestedActiveLibraryId = input.activeLibraryId
+    const state = get()
+    const mergedLibraries = {
+      ...state.libraries,
+      ...buildLibraryMap(input.libraries),
+    }
+    const mergedQuestions = {
+      ...state.questions,
+      ...buildQuestionMap(input.questions),
+    }
+    const mergedDiagnostics = {
+      ...state.diagnostics,
+      ...buildDiagnosticsMap(input.diagnostics),
+    }
+    const preferredLibraryId = input.activeLibraryId ?? state.activeLibraryId
+    const nextActiveLibraryId = resolveActiveLibraryId(mergedLibraries, preferredLibraryId)
 
-      return {
-        libraries: mergedLibraries,
-        questions: mergedQuestions,
-        diagnostics: mergedDiagnostics,
-        activeLibraryId:
-          requestedActiveLibraryId && mergedLibraries[requestedActiveLibraryId]
-            ? requestedActiveLibraryId
-            : state.activeLibraryId && mergedLibraries[state.activeLibraryId]
-              ? state.activeLibraryId
-              : pickNextActiveLibraryId(mergedLibraries),
-        isLoading: false,
-        error: undefined,
-      }
+    set({
+      libraries: mergedLibraries,
+      questions: mergedQuestions,
+      diagnostics: mergedDiagnostics,
+      activeLibraryId: nextActiveLibraryId,
+      isLoading: false,
+      error: undefined,
     })
+    persistActiveLibraryId(nextActiveLibraryId)
   },
 
   deleteLibrary: async (libraryId) => {
@@ -339,18 +375,16 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
     try {
       await purgeLibraryData(libraryId)
 
-      set((state) => {
-        const nextState = removeLibrariesFromState(state, [libraryId])
-        return {
-          ...nextState,
-          activeLibraryId:
-            nextState.activeLibraryId && nextState.libraries[nextState.activeLibraryId]
-              ? nextState.activeLibraryId
-              : pickNextActiveLibraryId(nextState.libraries),
-          isLoading: false,
-          error: undefined,
-        }
+      const nextState = removeLibrariesFromState(get(), [libraryId])
+      const nextActiveLibraryId = resolveActiveLibraryId(nextState.libraries, nextState.activeLibraryId)
+
+      set({
+        ...nextState,
+        activeLibraryId: nextActiveLibraryId,
+        isLoading: false,
+        error: undefined,
       })
+      persistActiveLibraryId(nextActiveLibraryId)
     } catch (error) {
       set({
         isLoading: false,
