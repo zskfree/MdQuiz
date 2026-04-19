@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { getDueReviewQueue, getLevelDistribution } from './review-queue'
-import { updateMemoryRecord } from './schedule'
+import { createMemoryRecordKey, updateMemoryRecord } from './schedule'
 
 describe('memory scheduling', () => {
   it('upgrades level and schedules next review on correct answer', () => {
@@ -71,5 +71,10 @@ describe('memory scheduling', () => {
     expect(distribution[1]).toBe(2)
     expect(distribution[4]).toBe(1)
     expect(distribution[7]).toBe(1)
+  })
+
+  it('creates isolated memory record keys for different libraries', () => {
+    expect(createMemoryRecordKey('lib-a', 'q1')).toBe('lib-a::q1')
+    expect(createMemoryRecordKey('lib-a', 'q1')).not.toBe(createMemoryRecordKey('lib-b', 'q1'))
   })
 })

@@ -32,12 +32,31 @@ function createIndex(
   store.createIndex(name, keyPath, options)
 }
 
+function createMemoryRecordStore(db: IDBDatabase) {
+  if (db.objectStoreNames.contains(STORE_NAMES.memoryRecords)) {
+    return
+  }
+
+  db.createObjectStore(STORE_NAMES.memoryRecords, { keyPath: ['libraryId', 'questionId'] })
+}
+
+function createMemoryRecordIndexes(store: IDBObjectStore) {
+  createIndex(store, 'libraryId', 'libraryId')
+  createIndex(store, 'level', 'level')
+  createIndex(store, 'nextReviewAt', 'nextReviewAt')
+  createIndex(store, 'updatedAt', 'updatedAt')
+}
+
+function isMemoryRecordKeyPathUpToDate(keyPath: string | string[] | null): boolean {
+  return Array.isArray(keyPath) && keyPath.length === 2 && keyPath[0] === 'libraryId' && keyPath[1] === 'questionId'
+}
+
 export const createInitialSchema: Migration = (db, transaction) => {
   createStore(db, STORE_NAMES.libraries, { keyPath: 'id' })
   createStore(db, STORE_NAMES.questions, { keyPath: 'id' })
   createStore(db, STORE_NAMES.diagnostics, { keyPath: 'id' })
   createStore(db, STORE_NAMES.sessions, { keyPath: 'id' })
-  createStore(db, STORE_NAMES.memoryRecords, { keyPath: 'questionId' })
+  createMemoryRecordStore(db)
   createStore(db, STORE_NAMES.examResults, { keyPath: 'id' })
   createStore(db, STORE_NAMES.imports, { keyPath: 'id' })
 
@@ -66,10 +85,7 @@ export const createInitialSchema: Migration = (db, transaction) => {
   createIndex(sessions, 'updatedAt', 'updatedAt')
 
   const memoryRecords = transaction.objectStore(STORE_NAMES.memoryRecords)
-  createIndex(memoryRecords, 'libraryId', 'libraryId')
-  createIndex(memoryRecords, 'level', 'level')
-  createIndex(memoryRecords, 'nextReviewAt', 'nextReviewAt')
-  createIndex(memoryRecords, 'updatedAt', 'updatedAt')
+  createMemoryRecordIndexes(memoryRecords)
 
   const examResults = transaction.objectStore(STORE_NAMES.examResults)
   createIndex(examResults, 'libraryId', 'libraryId')
@@ -82,6 +98,38 @@ export const createInitialSchema: Migration = (db, transaction) => {
   createIndex(imports, 'success', 'success')
 }
 
+export const migrateMemoryRecordsToCompoundKey: Migration = (db, transaction) => {
+  if (!db.objectStoreNames.contains(STORE_NAMES.memoryRecords)) {
+    createMemoryRecordStore(db)
+    createMemoryRecordIndexes(transaction.objectStore(STORE_NAMES.memoryRecords))
+    return
+  }
+
+  const memoryRecords = transaction.objectStore(STORE_NAMES.memoryRecords)
+
+  if (isMemoryRecordKeyPathUpToDate(memoryRecords.keyPath)) {
+    createMemoryRecordIndexes(memoryRecords)
+    return
+  }
+
+  const snapshotRequest = memoryRecords.getAll()
+
+  snapshotRequest.onsuccess = () => {
+    const snapshot = snapshotRequest.result
+
+    db.deleteObjectStore(STORE_NAMES.memoryRecords)
+    createMemoryRecordStore(db)
+
+    const recreatedStore = transaction.objectStore(STORE_NAMES.memoryRecords)
+    createMemoryRecordIndexes(recreatedStore)
+
+    for (const record of snapshot) {
+      recreatedStore.put(record)
+    }
+  }
+}
+
 export const migrations: Record<number, Migration> = {
   1: createInitialSchema,
+  2: migrateMemoryRecordsToCompoundKey,
 }

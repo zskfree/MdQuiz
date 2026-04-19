@@ -8,7 +8,7 @@ import type {
 import type { ExamResult, QuizSession } from './session'
 
 export const DB_NAME = 'mdquiz-db'
-export const DB_VERSION = 1
+export const DB_VERSION = 2
 
 export const STORE_NAMES = {
   libraries: 'libraries',

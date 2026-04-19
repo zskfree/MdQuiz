@@ -97,7 +97,7 @@ export function PracticePage() {
 
   const questions = getQuestionsForActiveLibrary()
   const currentQuestion = currentQuestionId ? getQuestionById(currentQuestionId) : undefined
-  const memoryRecord = currentQuestion ? getMemoryRecord(currentQuestion.id) : undefined
+  const memoryRecord = currentQuestion ? getMemoryRecord(currentQuestion.libraryId, currentQuestion.id) : undefined
   const dueQuestionIds = activeLibraryId ? getDueQuestionIds(activeLibraryId) : []
   const wrongQuestionIds = activeLibraryId ? getWrongQuestionIds(activeLibraryId) : []
   const quickMode = Boolean(currentSession?.config.quickMode)

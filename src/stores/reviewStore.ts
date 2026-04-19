@@ -1,5 +1,10 @@
 import { create } from 'zustand'
-import { getDueReviewQueue, getLevelDistribution, updateMemoryRecord } from '../core/memory'
+import {
+  createMemoryRecordKey,
+  getDueReviewQueue,
+  getLevelDistribution,
+  updateMemoryRecord,
+} from '../core/memory'
 import { loadMemoryRecords, saveMemoryRecord, saveMemoryRecords } from '../core/storage'
 import type { MemoryLevel, MemoryRecord } from '../types'
 
@@ -14,7 +19,7 @@ type ReviewStoreState = {
     isCorrect: boolean
     reviewedAt?: number
   }) => MemoryRecord
-  getMemoryRecord: (questionId: string) => MemoryRecord | undefined
+  getMemoryRecord: (libraryId: string, questionId: string) => MemoryRecord | undefined
   getDueCount: (now?: number) => number
   getDueQuestionIds: (libraryId?: string, now?: number) => string[]
   getWrongQuestionIds: (libraryId?: string) => string[]
@@ -33,7 +38,9 @@ export const useReviewStore = create<ReviewStoreState>((set, get) => ({
     const records = await loadMemoryRecords()
     set({
       initialized: true,
-      memoryRecords: Object.fromEntries(records.map((record) => [record.questionId, record])),
+      memoryRecords: Object.fromEntries(
+        records.map((record) => [createMemoryRecordKey(record.libraryId, record.questionId), record]),
+      ),
     })
   },
 
@@ -43,13 +50,16 @@ export const useReviewStore = create<ReviewStoreState>((set, get) => ({
     set((state) => ({
       memoryRecords: {
         ...state.memoryRecords,
-        ...Object.fromEntries(records.map((record) => [record.questionId, record])),
+        ...Object.fromEntries(
+          records.map((record) => [createMemoryRecordKey(record.libraryId, record.questionId), record]),
+        ),
       },
     }))
   },
 
   applyReviewResult: (input) => {
-    const current = get().memoryRecords[input.questionId]
+    const recordKey = createMemoryRecordKey(input.libraryId, input.questionId)
+    const current = get().memoryRecords[recordKey]
     const nextRecord = updateMemoryRecord({
       current,
       questionId: input.questionId,
@@ -61,7 +71,7 @@ export const useReviewStore = create<ReviewStoreState>((set, get) => ({
     set((state) => ({
       memoryRecords: {
         ...state.memoryRecords,
-        [input.questionId]: nextRecord,
+        [recordKey]: nextRecord,
       },
     }))
     void saveMemoryRecord(nextRecord)
@@ -69,7 +79,7 @@ export const useReviewStore = create<ReviewStoreState>((set, get) => ({
     return nextRecord
   },
 
-  getMemoryRecord: (questionId) => get().memoryRecords[questionId],
+  getMemoryRecord: (libraryId, questionId) => get().memoryRecords[createMemoryRecordKey(libraryId, questionId)],
 
   getDueCount: (now = Date.now()) =>
     getDueReviewQueue(Object.values(get().memoryRecords), now).length,

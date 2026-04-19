@@ -3,6 +3,10 @@ import { getNextLevel, LEVEL_INTERVAL_DAYS } from './level-rules'
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000
 
+export function createMemoryRecordKey(libraryId: string, questionId: string): string {
+  return `${libraryId}::${questionId}`
+}
+
 export function addDays(baseTimestamp: number, days: number): number {
   return baseTimestamp + days * DAY_IN_MS
 }
