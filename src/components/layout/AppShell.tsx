@@ -1,13 +1,22 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 
 const navItems = [
-  { to: '/', label: '复习看板', shortLabel: '看', end: true },
-  { to: '/libraries', label: '题库', shortLabel: '库' },
-  { to: '/practice', label: '练习', shortLabel: '练' },
-  { to: '/exam', label: '考试', shortLabel: '考' },
-  { to: '/settings', label: '设置', shortLabel: '设' },
+  { to: '/', label: '复习看板', end: true },
+  { to: '/libraries', label: '题库' },
+  { to: '/practice', label: '练习' },
+  { to: '/exam', label: '考试' },
+  { to: '/settings', label: '设置' },
 ]
+
+function getCollapsedLabel(label: string): string {
+  if (label === '复习看板') {
+    return '看板'
+  }
+
+  const condensed = label.replace(/\s+/g, '').trim()
+  return condensed.slice(0, 2) || label
+}
 
 export function AppShell() {
   const [sidebarExpanded, setSidebarExpanded] = useState(false)
@@ -132,7 +141,7 @@ export function AppShell() {
               onClick={handleNavClick}
               className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}
             >
-              {sidebarExpanded || isMobile ? item.label : item.shortLabel}
+              {sidebarExpanded || isMobile ? item.label : getCollapsedLabel(item.label)}
             </NavLink>
           ))}
         </nav>
