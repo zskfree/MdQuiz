@@ -51,22 +51,6 @@ function getOptionClassName(input: {
 
 function localizeAnswerToken(token: string): string {
   const uppercaseToken = token.toUpperCase()
-  const optionKeyMap: Record<string, string> = {
-    A: '甲',
-    B: '乙',
-    C: '丙',
-    D: '丁',
-    E: '戊',
-    F: '己',
-    G: '庚',
-    H: '辛',
-    I: '壬',
-    J: '癸',
-  }
-
-  if (optionKeyMap[uppercaseToken]) {
-    return optionKeyMap[uppercaseToken]
-  }
 
   if (uppercaseToken === 'TRUE') {
     return '正确'
@@ -401,6 +385,7 @@ export function PracticePage() {
             {currentQuestion.options.map((option) => {
               const selected = resolvedAnswer.selected.includes(option.key)
               const isExpected = expectedAnswers.has(option.key)
+              const showOptionKey = currentQuestion.type !== 'boolean'
 
               return (
                 <button
@@ -414,7 +399,7 @@ export function PracticePage() {
                   onClick={() => handleOptionSelect(currentQuestion.id, option.key)}
                   disabled={resolvedAnswer.submitted && quickMode}
                 >
-                  <strong>{localizeAnswerToken(option.key)}</strong>
+                  {showOptionKey ? <strong>{localizeAnswerToken(option.key)}</strong> : null}
                   <span>{option.label}</span>
                 </button>
               )

@@ -42,22 +42,6 @@ function getExamOptionClassName(selected: boolean): string {
 
 function localizeAnswerToken(token: string): string {
   const uppercaseToken = token.toUpperCase()
-  const optionKeyMap: Record<string, string> = {
-    A: '甲',
-    B: '乙',
-    C: '丙',
-    D: '丁',
-    E: '戊',
-    F: '己',
-    G: '庚',
-    H: '辛',
-    I: '壬',
-    J: '癸',
-  }
-
-  if (optionKeyMap[uppercaseToken]) {
-    return optionKeyMap[uppercaseToken]
-  }
 
   if (uppercaseToken === 'TRUE') {
     return '正确'
@@ -384,18 +368,8 @@ export function ExamPage() {
 
               {quickMode ? (
                 <div className="quick-mode-tools">
-                  <button
-                    type="button"
-                    className="secondary-button quick-mode-mark-toggle"
-                    onClick={() => toggleMarkedQuestion(currentQuestion.id)}
-                  >
-                    {currentSession.marks[currentQuestion.id] ? '取消标记' : '标记回看'}
-                  </button>
                   <button type="button" className="secondary-button quick-mode-toggle" onClick={toggleQuickMode}>
                     退出快速刷题
-                  </button>
-                  <button type="button" className="action-button" onClick={handleSubmitExam}>
-                    交卷
                   </button>
                 </div>
               ) : (
@@ -403,7 +377,7 @@ export function ExamPage() {
                   <button type="button" className="secondary-button quick-mode-toggle" onClick={toggleQuickMode}>
                     开启快速刷题
                   </button>
-                  <button type="button" className="action-button" onClick={handleSubmitExam}>
+                  <button type="button" className="action-button exam-submit-top" onClick={handleSubmitExam}>
                     交卷
                   </button>
                 </div>
@@ -418,6 +392,7 @@ export function ExamPage() {
             <div className="option-list">
               {currentQuestion.options.map((option) => {
                 const selected = currentAnswer?.selected.includes(option.key) ?? false
+                const showOptionKey = currentQuestion.type !== 'boolean'
 
                 return (
                   <button
@@ -426,7 +401,7 @@ export function ExamPage() {
                     className={getExamOptionClassName(selected)}
                     onClick={() => handleOptionSelect(currentQuestion.id, option.key)}
                   >
-                    <strong>{localizeAnswerToken(option.key)}</strong>
+                    {showOptionKey ? <strong>{localizeAnswerToken(option.key)}</strong> : null}
                     <span>{option.label}</span>
                   </button>
                 )
@@ -449,6 +424,16 @@ export function ExamPage() {
                 >
                   下一题
                 </button>
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() => toggleMarkedQuestion(currentQuestion.id)}
+                >
+                  {currentSession.marks[currentQuestion.id] ? '取消标记' : '标记回看'}
+                </button>
+                <button type="button" className="action-button" onClick={handleSubmitExam}>
+                  交卷
+                </button>
               </div>
             ) : (
               <div className="action-row question-actions">
@@ -468,6 +453,9 @@ export function ExamPage() {
                 </button>
                 <button className="secondary-button" onClick={() => toggleMarkedQuestion(currentQuestion.id)}>
                   {currentSession.marks[currentQuestion.id] ? '取消标记' : '标记回看'}
+                </button>
+                <button type="button" className="action-button exam-submit-bottom" onClick={handleSubmitExam}>
+                  交卷
                 </button>
               </div>
             )}

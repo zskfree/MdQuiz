@@ -534,6 +534,10 @@ select {
   margin-top: 2px;
 }
 
+.exam-submit-bottom {
+  display: none;
+}
+
 .action-button {
   background: var(--accent);
   color: #fff;
@@ -894,6 +898,16 @@ select {
     line-height: 1.2;
   }
 
+  .practice-page:not(.quick-mode) .exam-submit-top {
+    display: none;
+  }
+
+  .practice-page:not(.quick-mode) .exam-submit-bottom {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   .practice-page:not(.quick-mode) .nav-panel {
     gap: 10px;
   }
@@ -1029,6 +1043,7 @@ select {
   }
 
   .practice-page.quick-mode .quick-nav-actions .secondary-button,
+  .practice-page.quick-mode .quick-nav-actions .action-button,
   .practice-page.quick-mode .question-actions .secondary-button,
   .practice-page.quick-mode .question-actions .action-button {
     min-height: 44px;
@@ -1200,6 +1215,7 @@ select {
   }
 
   .practice-page.quick-mode .quick-nav-actions .secondary-button,
+  .practice-page.quick-mode .quick-nav-actions .action-button,
   .practice-page.quick-mode .question-actions .secondary-button,
   .practice-page.quick-mode .question-actions .action-button {
     min-height: 42px;
