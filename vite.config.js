@@ -10,12 +10,13 @@ function readEnv(name) {
     return envSource === null || envSource === void 0 ? void 0 : envSource[name];
 }
 function readRepositoryFromWorkingDirectory() {
+    var _a;
     var cwd = readEnv('INIT_CWD') || readEnv('PWD') || readEnv('npm_config_local_prefix');
     if (!cwd) {
         return undefined;
     }
     var parts = cwd.split(/[\\/]+/).filter(Boolean);
-    var _a = parts[parts.length - 1], repository = _a === void 0 ? void 0 : _a.trim();
+    var repository = (_a = parts[parts.length - 1]) === null || _a === void 0 ? void 0 : _a.trim();
     return repository || undefined;
 }
 function resolveProductionBase() {

@@ -5,8 +5,10 @@
   "type": "module",
   "scripts": {
     "build:library": "node ./scripts/build-library.mjs",
+    "build:site": "node ./scripts/build-site.mjs",
+    "sync:static-root": "node ./scripts/sync-static-root.mjs",
     "dev": "npm run build:library && vite --config vite.config.ts",
-    "build": "npm run build:library && tsc -b && vite build --config vite.config.ts",
+    "build": "npm run build:library && tsc -b && npm run build:site && npm run sync:static-root",
     "preview": "vite preview --config vite.config.ts",
     "test": "vitest run"
   },
